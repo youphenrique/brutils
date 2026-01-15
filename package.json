@@ -1,0 +1,19 @@
+{
+  "name": "brutils",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "format": "turbo run format",
+    "format:fix": "prettier --write \"**/*.{ts,tsx,js,json,md}\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.27.0",
+  "devDependencies": {
+    "prettier": "^3.7.4",
+    "turbo": "^2.7.3"
+  }
+}
