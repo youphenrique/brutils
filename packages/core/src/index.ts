@@ -1,3 +1,3 @@
-export function fn() {
-  return "Hello, tsdown!";
-}
+import * as cpf from "./cpf";
+
+export { cpf };

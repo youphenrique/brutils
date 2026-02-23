@@ -29,6 +29,14 @@ pnpm add @brutils/core
 yarn add @brutils/core
 ```
 
+```bash
+bun add @brutils/core
+```
+
+```bash
+deno add @brutils/core
+```
+
 > **Note**: This library requires Node.js 24+ and is ESM-only. Make sure your project supports ES modules.
 
 ## 🚀 Quick Start
@@ -41,37 +49,13 @@ const result = cpf.safeValidate("56105705735");
 console.log(result.success); // true or false
 
 // Format CNPJ
-const formatted = cnpj.mask("16370508000111");
+const formatted = cnpj.format("16370508000111");
 console.log(formatted); // "16.370.508/0001-11"
 
 // Generate random CEP
 const cep = cep.generate();
 console.log(cep); // "06725-063"
 ```
-
-## 📚 Available Utilities
-
-All utilities follow a consistent API: `[type](value?).[action]()`.
-
-### Types
-
-- `cpf` - CPF (Cadastro de Pessoas Físicas)
-- `cnpj` - CNPJ (Cadastro Nacional da Pessoa Jurídica)
-- `cep` - CEP (postal code)
-- `creditCard` - Credit card numbers
-- `phone` - Brazilian phone numbers
-
-### Actions
-
-- `.safeValidate()` - Returns `{ success: boolean, error?: string[] }`
-- `.mask()` - Returns formatted string with mask
-- `.generate()` - Returns a valid random string
-- `.strip()` - Returns only digits
-
-### Specialized formatters
-
-- `currency.format(value: number)` - Format as Brazilian Real (R$)
-- `date.format(date: Date | string)` - Format date as DD/MM/YYYY
 
 ## 🔧 Usage Examples
 
@@ -85,7 +69,7 @@ cpf.safeValidate("123.456.789-09"); // { success: true }
 cpf.safeValidate("12345678909"); // { success: true }
 
 // Format CPF
-cpf.mask("12345678909"); // "123.456.789-09"
+cpf.format("12345678909"); // "123.456.789-09"
 
 // Clean formatting
 cpf.strip("123.456.789-09"); // "12345678909"
@@ -100,7 +84,7 @@ import { cnpj } from "@brutils/core";
 cnpj.safeValidate("12.345.678/0001-95"); // { success: true }
 
 // Format CNPJ
-cnpj.mask("12345678000195"); // "12.345.678/0001-95"
+cnpj.format("12345678000195"); // "12.345.678/0001-95"
 
 // Generate random valid CNPJ for testing
 cnpj.generate(); // "12.345.678/0001-95"
