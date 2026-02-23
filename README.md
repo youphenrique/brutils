@@ -1,4 +1,4 @@
-# 🇧🇷 Brazilian Utilities
+# 🇧🇷 BR Utils
 
 A comprehensive TypeScript library for validating, formatting, generating, and manipulating data according to Brazilian business standards and regulations.
 
