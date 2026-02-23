@@ -29,24 +29,24 @@ pnpm add @brutils/core
 yarn add @brutils/core
 ```
 
-> **Note**: This library requires Node.js 16+ and is ESM-only. Make sure your project supports ES modules.
+> **Note**: This library requires Node.js 24+ and is ESM-only. Make sure your project supports ES modules.
 
 ## 🚀 Quick Start
 
 ```typescript
-import { cpf, cnpj, cep } from '@brutils/core';
+import { cpf, cnpj, cep } from "@brutils/core";
 
 // Validate CPF
-const result = cpf.safeValidate("123.456.789-09");
+const result = cpf.safeValidate("56105705735");
 console.log(result.success); // true or false
 
 // Format CNPJ
-const formatted = cnpj.mask('12345678000195');
-console.log(formatted); // "12.345.678/0001-95"
+const formatted = cnpj.mask("16370508000111");
+console.log(formatted); // "16.370.508/0001-11"
 
 // Generate random CEP
 const cep = cep.generate();
-console.log(cep); // "01234-567"
+console.log(cep); // "06725-063"
 ```
 
 ## 📚 Available Utilities
@@ -78,29 +78,29 @@ All utilities follow a consistent API: `[type](value?).[action]()`.
 ### CPF Operations
 
 ```typescript
-import * as br from '@brutils/core';
+import { cpf } from "@brutils/core";
 
 // Accepts with or without formatting
-cpf.safeValidate('123.456.789-09'); // { success: true }
-cpf.safeValidate('12345678909'); // { success: true }
+cpf.safeValidate("123.456.789-09"); // { success: true }
+cpf.safeValidate("12345678909"); // { success: true }
 
 // Format CPF
-cpf.mask('12345678909'); // "123.456.789-09"
+cpf.mask("12345678909"); // "123.456.789-09"
 
 // Clean formatting
-cpf.strip('123.456.789-09'); // "12345678909"
+cpf.strip("123.456.789-09"); // "12345678909"
 ```
 
 ### CNPJ Operations
 
 ```typescript
-import { cnpj } from '@brutils/core';
+import { cnpj } from "@brutils/core";
 
 // Validate CNPJ
-cnpj.safeValidate('12.345.678/0001-95'); // { success: true }
+cnpj.safeValidate("12.345.678/0001-95"); // { success: true }
 
 // Format CNPJ
-cnpj.mask('12345678000195'); // "12.345.678/0001-95"
+cnpj.mask("12345678000195"); // "12.345.678/0001-95"
 
 // Generate random valid CNPJ for testing
 cnpj.generate(); // "12.345.678/0001-95"
@@ -109,27 +109,10 @@ cnpj.generate(); // "12.345.678/0001-95"
 ### Currency Formatting
 
 ```typescript
-import { currency } from '@brutils/core';
+import { currency } from "@brutils/core";
 
 currency.format(1234.56); // "R$ 1.234,56"
 currency.format(1000); // "R$ 1.000,00"
-```
-
-## 🎯 TypeScript Support
-
-This library is written in TypeScript and provides complete type definitions:
-
-```typescript
-import * as br from '@brutils/core';
-
-interface User {
-  cpf: string; 
-  cnpj?: string;
-  address: {
-    cep: string;
-    street: string;
-  };
-}
 ```
 
 ## 🤝 Contributing
@@ -139,15 +122,6 @@ Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md)
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🗺️ Roadmap
-
-- [ ] React components with built-in validation
-- [ ] Additional validators (vehicle plates, voter registration, etc.)
-- [ ] API integration helpers (ViaCEP, etc.)
-- [ ] Comprehensive documentation site
-- [ ] Bank account validators
-- [ ] State registration (Inscrição Estadual) validators
 
 ## 📞 Support
 
