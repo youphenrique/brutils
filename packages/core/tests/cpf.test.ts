@@ -3,15 +3,15 @@ import { cpf } from "../src";
 
 describe("cpf.format", () => {
   it("formats valid unformatted CPF", () => {
-    expect(cpf.format("12345678909")).toBe("123.456.789-09");
+    expect(cpf.format("52263944621")).toBe("522.639.446-21");
   });
 
   it("reformats valid formatted CPF", () => {
-    expect(cpf.format("123.456.789-09")).toBe("123.456.789-09");
+    expect(cpf.format("522.639.446-21")).toBe("522.639.446-21");
   });
 
   it("formats partially formatted CPF", () => {
-    expect(cpf.format("123.45678909")).toBe("123.456.789-09");
+    expect(cpf.format("522.63944621")).toBe("522.639.446-21");
   });
 
   it("preserves leading zeros", () => {
@@ -19,7 +19,7 @@ describe("cpf.format", () => {
   });
 
   it("strips whitespace and non-numeric characters", () => {
-    expect(cpf.format("  123 456 789 09  ")).toBe("123.456.789-09");
+    expect(cpf.format("  522 639 446 21  ")).toBe("522.639.446-21");
     expect(cpf.format("943.?ABC895.751-04abc")).toBe("943.895.751-04");
   });
 

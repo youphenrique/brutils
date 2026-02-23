@@ -15,7 +15,7 @@ export interface FormatCpfOptions {
  *
  * @example
  * ```TypeScript
- * format("12345678909"); // "123.456.789-09"
+ * format("52263944621"); // "522.639.446-21"
  * ```
  */
 export function format(value: string, options: FormatCpfOptions = {}): string {

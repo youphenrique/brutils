@@ -65,14 +65,14 @@ console.log(cep); // "06725-063"
 import { cpf } from "@brutils/core";
 
 // Accepts with or without formatting
-cpf.safeValidate("123.456.789-09"); // { success: true }
-cpf.safeValidate("12345678909"); // { success: true }
+cpf.safeValidate("522.639.446-21"); // { success: true }
+cpf.safeValidate("52263944621"); // { success: true }
 
 // Format CPF
-cpf.format("12345678909"); // "123.456.789-09"
+cpf.format("52263944621"); // "522.639.446-21"
 
 // Clean formatting
-cpf.strip("123.456.789-09"); // "12345678909"
+cpf.strip("522.639.446-21"); // "52263944621"
 ```
 
 ### CNPJ Operations
