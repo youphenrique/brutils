@@ -1,4 +1,4 @@
-const CPF_LENGTH = 11;
+export const CPF_LENGTH = 11;
 
 export interface FormatCpfOptions {
   pad?: boolean;
