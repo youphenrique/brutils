@@ -64,15 +64,8 @@ console.log(cep); // "06725-063"
 ```typescript
 import { cpf } from "@brutils/core";
 
-// Accepts with or without formatting
-cpf.safeValidate("522.639.446-21"); // { success: true }
-cpf.safeValidate("52263944621"); // { success: true }
-
 // Format CPF
 cpf.format("52263944621"); // "522.639.446-21"
-
-// Clean formatting
-cpf.strip("522.639.446-21"); // "52263944621"
 ```
 
 ### CNPJ Operations
