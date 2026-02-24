@@ -1,3 +1,1 @@
-import * as cpf from "./cpf";
-
-export { cpf };
+export * as cpf from "./cpf";

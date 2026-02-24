@@ -13,16 +13,15 @@ BR Utils is a TypeScript monorepo providing Brazilian business utilities (valida
 ├── packages/
 │   └── core/            # @brutils/core library
 │       ├── src/         # Source code
-│       ├── tests/       # Vitest tests
-│       └── dist/        # Build output (generated)
+│       └── tests/       # Vitest tests
 ├── apps/                # App shells
 ├── package.json         # Workspace scripts and tooling
 └── pnpm-workspace.yaml  # Workspace definition
 ```
 
 Key files:
+
 - `packages/core/src/index.ts` - library entry point
-- `packages/core/tests/index.test.ts` - test suite entry point
 - `packages/core/tsdown.config.ts` - build configuration
 
 ## Development Workflow
