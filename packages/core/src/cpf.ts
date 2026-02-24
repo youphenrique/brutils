@@ -1,6 +1,6 @@
-export const CPF_LENGTH = 11;
+export const LENGTH = 11;
 
-export interface FormatCpfOptions {
+export interface FormatOptions {
   pad?: boolean;
 }
 
@@ -18,9 +18,9 @@ export interface FormatCpfOptions {
  * format("52263944621"); // "522.639.446-21"
  * ```
  */
-export function format(value: string, options: FormatCpfOptions = {}): string {
-  const digits = value.replace(/\D/g, "").slice(0, CPF_LENGTH);
-  const normalized = options.pad ? digits.padStart(CPF_LENGTH, "0") : digits;
+export function format(value: string, options: FormatOptions = {}): string {
+  const digits = value.replace(/\D/g, "").slice(0, LENGTH);
+  const normalized = options.pad ? digits.padStart(LENGTH, "0") : digits;
 
   if (normalized.length === 0) {
     return "";
