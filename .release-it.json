@@ -1,0 +1,36 @@
+{
+  "git": {
+    "commitMessage": "chore: release @brutils/core v${version}",
+    "tagName": "v${version}",
+    "tagAnnotation": "Release @brutils/core v${version}",
+    "requireCleanWorkingDir": true,
+    "requireBranch": "main",
+    "push": true
+  },
+  "npm": false,
+  "github": {
+    "release": true,
+    "releaseName": "v${version}"
+  },
+  "plugins": {
+    "@release-it/conventional-changelog": {
+      "preset": {
+        "name": "conventionalcommits",
+        "types": [
+          { "type": "feat", "section": "Features" },
+          { "type": "fix", "section": "Bug Fixes" },
+          { "type": "perf", "section": "Performance" },
+          { "type": "refactor", "section": "Refactors" },
+          { "type": "docs", "section": "Documentation" },
+          { "type": "test", "hidden": true },
+          { "type": "chore", "hidden": true }
+        ]
+      },
+      "infile": "CHANGELOG.md"
+    }
+  },
+  "hooks": {
+    "before:init": ["pnpm lint", "pnpm test -- --run"],
+    "after:bump": "pnpm --filter @brutils/core build"
+  }
+}
