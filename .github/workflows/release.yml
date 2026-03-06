@@ -2,7 +2,8 @@ name: Release
 
 on:
   push:
-    branches: [main]
+    tags:
+      - "v*"
 
 concurrency:
   group: release-${{ github.ref }}
@@ -27,7 +28,7 @@ jobs:
           cache: pnpm
           registry-url: "https://registry.npmjs.org"
 
-      - run: pnpm install --frozen-lockfile
+      - run: pnpm install
       - run: pnpm --filter @brutils/core build
 
       - name: Create Release PR or Publish
