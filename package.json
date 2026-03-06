@@ -10,17 +10,31 @@
   },
   "scripts": {
     "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "format": "turbo run format",
     "format:fix": "oxfmt --write",
     "lint": "oxlint",
-    "lint:fix": "oxlint --fix"
+    "lint:fix": "oxlint --fix",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "release-it",
+    "knip": "knip",
+    "typecheck": "pnpm --filter @brutils/core typecheck"
   },
   "keywords": [],
   "license": "MIT",
   "packageManager": "pnpm@10.27.0",
   "devDependencies": {
+    "@changesets/changelog-github": "^0.5.1",
+    "@changesets/cli": "^2.29.7",
+    "@release-it/conventional-changelog": "^10.0.1",
+    "@vitest/coverage-v8": "^4.0.18",
+    "knip": "^5.62.0",
     "oxfmt": "^0.35.0",
     "oxlint": "^1.50.0",
-    "turbo": "^2.8.10"
+    "release-it": "^19.0.4",
+    "turbo": "^2.8.10",
+    "vitest": "^4.0.18"
   }
 }
