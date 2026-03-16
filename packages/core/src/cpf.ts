@@ -1,11 +1,18 @@
 export const LENGTH = 11;
 
+export type CpfErrorCode =
+  | "INVALID_FORMAT"
+  | "INVALID_LENGTH"
+  | "REPEATED_DIGITS"
+  | "INVALID_CHECKSUM";
+
 export class InvalidCpfError extends Error {
   constructor(
     public readonly cpf: string,
+    public readonly code: CpfErrorCode,
     message?: string,
   ) {
-    super(message ?? `Invalid CPF: "${cpf}"`);
+    super(message ?? `Invalid CPF: "${cpf}" (${code})`);
     this.name = "InvalidCpfError";
   }
 }
@@ -50,6 +57,10 @@ export function format(value: string, options: FormatOptions = {}): string {
   return part4.length > 0 ? `${masked}-${part4}` : masked;
 }
 
+function invalid(cpf: string, code: CpfErrorCode, message?: string): never {
+  throw new InvalidCpfError(cpf, code, message);
+}
+
 function calculateCheckDigit(digits: string, weights: readonly number[]): number {
   const sum = weights.reduce((acc, weight, index) => {
     return acc + Number(digits[index]) * weight;
@@ -72,7 +83,7 @@ function normalizeForValidation(cpf: string, strict: boolean): string {
       return cpf.replace(/\D/g, "");
     }
 
-    throw new InvalidCpfError(cpf, "Strict mode only accepts 11 digits or ###.###.###-## format.");
+    invalid(cpf, "INVALID_FORMAT", "Strict mode only accepts 11 digits or ###.###.###-## format.");
   }
 
   return cpf.replace(/\D/g, "").padStart(LENGTH, "0");
@@ -83,21 +94,21 @@ export function validate(cpf: string, options: ValidateOptions = {}): boolean {
   const normalized = normalizeForValidation(cpf, strict);
 
   if (normalized.length !== LENGTH) {
-    throw new InvalidCpfError(cpf, "CPF must contain exactly 11 digits.");
+    invalid(cpf, "INVALID_LENGTH", "CPF must contain exactly 11 digits.");
   }
 
   if (/^(\d)\1{10}$/.test(normalized)) {
-    throw new InvalidCpfError(cpf, "CPF cannot contain all identical digits.");
+    invalid(cpf, "REPEATED_DIGITS", "CPF cannot contain all identical digits.");
   }
 
   const firstCheckDigit = calculateCheckDigit(normalized, [10, 9, 8, 7, 6, 5, 4, 3, 2]);
   if (firstCheckDigit !== Number(normalized[9])) {
-    throw new InvalidCpfError(cpf, "Invalid CPF first check digit.");
+    invalid(cpf, "INVALID_CHECKSUM", "Invalid CPF check digits.");
   }
 
   const secondCheckDigit = calculateCheckDigit(normalized, [11, 10, 9, 8, 7, 6, 5, 4, 3, 2]);
   if (secondCheckDigit !== Number(normalized[10])) {
-    throw new InvalidCpfError(cpf, "Invalid CPF second check digit.");
+    invalid(cpf, "INVALID_CHECKSUM", "Invalid CPF check digits.");
   }
 
   return true;
@@ -117,7 +128,7 @@ export function safeValidate(
 
     return {
       success: false,
-      error: new InvalidCpfError(cpf, "Unexpected CPF validation error."),
+      error: new InvalidCpfError(cpf, "INVALID_CHECKSUM", "Unexpected CPF validation error."),
     };
   }
 }

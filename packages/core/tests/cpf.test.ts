@@ -56,22 +56,36 @@ describe("cpf.validate", () => {
     expect(cpf.validate("0000000191")).toBe(true);
   });
 
-  it("rejects all-same-digit CPF", () => {
-    expect(() => cpf.validate("000.000.000-00")).toThrow(cpf.InvalidCpfError);
+  it("rejects all-same-digit CPF with REPEATED_DIGITS code", () => {
+    const result = cpf.safeValidate("000.000.000-00");
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.code).toBe("REPEATED_DIGITS");
+    }
   });
 
-  it("rejects wrong length", () => {
-    expect(() => cpf.validate("1234567890912")).toThrow(cpf.InvalidCpfError);
+  it("rejects wrong length with INVALID_LENGTH code", () => {
+    const result = cpf.safeValidate("1234567890912");
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.code).toBe("INVALID_LENGTH");
+    }
   });
 
-  it("rejects incorrect check digits", () => {
-    expect(() => cpf.validate("12345678900")).toThrow(cpf.InvalidCpfError);
+  it("rejects incorrect check digits with INVALID_CHECKSUM code", () => {
+    const result = cpf.safeValidate("12345678900");
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.code).toBe("INVALID_CHECKSUM");
+    }
   });
 
-  it("strict mode rejects malformed input", () => {
-    expect(() => cpf.validate("101#688!!!!!!542......36", { strict: true })).toThrow(
-      cpf.InvalidCpfError,
-    );
+  it("strict mode rejects malformed input with INVALID_FORMAT code", () => {
+    const result = cpf.safeValidate("101#688!!!!!!542......36", { strict: true });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.code).toBe("INVALID_FORMAT");
+    }
   });
 
   it("strict mode accepts raw and masked valid inputs", () => {
@@ -93,6 +107,7 @@ describe("cpf.safeValidate", () => {
     expect(result.success).toBe(false);
     if (!result.success) {
       expect(result.error).toBeInstanceOf(cpf.InvalidCpfError);
+      expect(result.error.code).toBe("INVALID_FORMAT");
     }
   });
 });
