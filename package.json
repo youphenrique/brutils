@@ -1,26 +1,19 @@
 {
   "name": "brutils",
-  "version": "1.0.0",
-  "author": "Paulo Henrique <pauloh1288@gmail.com>",
-  "description": "TypeScript library for brazilian business utilities",
-  "main": "index.js",
-  "funding": {
-    "type": "github",
-    "url": "https://github.com/sponsors/youphenrique"
-  },
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
   "scripts": {
-    "test": "vitest run",
-    "format": "turbo run format",
-    "format:fix": "oxfmt --write",
-    "lint": "oxlint",
-    "lint:fix": "oxlint --fix"
+    "ready": "vp fmt && vp lint && vp run test -r && vp run build -r",
+    "dev": "vp run website#dev",
+    "prepare": "vp config"
   },
-  "keywords": [],
-  "license": "MIT",
-  "packageManager": "pnpm@10.27.0",
   "devDependencies": {
-    "oxfmt": "^0.35.0",
-    "oxlint": "^1.50.0",
-    "turbo": "^2.8.10"
-  }
+    "vite": "workspace:*",
+    "vite-plus": "catalog:"
+  },
+  "engines": {
+    "node": ">=24.13.1"
+  },
+  "packageManager": "pnpm@10.32.1"
 }
