@@ -37,3 +37,62 @@ describe("cpf.format", () => {
     expect(cpf.format("94389575104", { pad: true })).toBe("943.895.751-04");
   });
 });
+
+describe("cpf.validate", () => {
+  it("accepts valid unformatted CPF", () => {
+    expect(cpf.validate("12345678909")).toBe(true);
+  });
+
+  it("accepts valid formatted CPF", () => {
+    expect(cpf.validate("123.456.789-09")).toBe(true);
+  });
+
+  it("accepts valid CPF with garbage in default mode", () => {
+    expect(cpf.validate("101#688!!!!!!542......36")).toBe(true);
+  });
+
+  it("accepts short digit string after left-pad in default mode", () => {
+    expect(cpf.validate("00000000191")).toBe(true);
+    expect(cpf.validate("0000000191")).toBe(true);
+  });
+
+  it("rejects all-same-digit CPF", () => {
+    expect(() => cpf.validate("000.000.000-00")).toThrow(cpf.InvalidCpfError);
+  });
+
+  it("rejects wrong length", () => {
+    expect(() => cpf.validate("1234567890912")).toThrow(cpf.InvalidCpfError);
+  });
+
+  it("rejects incorrect check digits", () => {
+    expect(() => cpf.validate("12345678900")).toThrow(cpf.InvalidCpfError);
+  });
+
+  it("strict mode rejects malformed input", () => {
+    expect(() => cpf.validate("101#688!!!!!!542......36", { strict: true })).toThrow(
+      cpf.InvalidCpfError,
+    );
+  });
+
+  it("strict mode accepts raw and masked valid inputs", () => {
+    expect(cpf.validate("12345678909", { strict: true })).toBe(true);
+    expect(cpf.validate("123.456.789-09", { strict: true })).toBe(true);
+  });
+});
+
+describe("cpf.safeValidate", () => {
+  it("never throws and returns success for valid CPF", () => {
+    expect(() => cpf.safeValidate("12345678909")).not.toThrow();
+    expect(cpf.safeValidate("12345678909")).toEqual({ success: true });
+  });
+
+  it("never throws and returns InvalidCpfError for invalid CPF", () => {
+    expect(() => cpf.safeValidate("123")).not.toThrow();
+    const result = cpf.safeValidate("123", { strict: true });
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error).toBeInstanceOf(cpf.InvalidCpfError);
+    }
+  });
+});

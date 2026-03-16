@@ -1,5 +1,19 @@
 export const LENGTH = 11;
 
+export class InvalidCpfError extends Error {
+  constructor(
+    public readonly cpf: string,
+    message?: string,
+  ) {
+    super(message ?? `Invalid CPF: "${cpf}"`);
+    this.name = "InvalidCpfError";
+  }
+}
+
+export interface ValidateOptions {
+  strict?: boolean;
+}
+
 export interface FormatOptions {
   pad?: boolean;
 }
@@ -34,4 +48,76 @@ export function format(value: string, options: FormatOptions = {}): string {
   const masked = [part1, part2, part3].filter(Boolean).join(".");
 
   return part4.length > 0 ? `${masked}-${part4}` : masked;
+}
+
+function calculateCheckDigit(digits: string, weights: readonly number[]): number {
+  const sum = weights.reduce((acc, weight, index) => {
+    return acc + Number(digits[index]) * weight;
+  }, 0);
+
+  const remainder = sum % 11;
+  return remainder < 2 ? 0 : 11 - remainder;
+}
+
+function normalizeForValidation(cpf: string, strict: boolean): string {
+  if (strict) {
+    const rawPattern = /^\d{11}$/;
+    const maskedPattern = /^\d{3}\.\d{3}\.\d{3}-\d{2}$/;
+
+    if (rawPattern.test(cpf)) {
+      return cpf;
+    }
+
+    if (maskedPattern.test(cpf)) {
+      return cpf.replace(/\D/g, "");
+    }
+
+    throw new InvalidCpfError(cpf, "Strict mode only accepts 11 digits or ###.###.###-## format.");
+  }
+
+  return cpf.replace(/\D/g, "").padStart(LENGTH, "0");
+}
+
+export function validate(cpf: string, options: ValidateOptions = {}): boolean {
+  const strict = options.strict ?? false;
+  const normalized = normalizeForValidation(cpf, strict);
+
+  if (normalized.length !== LENGTH) {
+    throw new InvalidCpfError(cpf, "CPF must contain exactly 11 digits.");
+  }
+
+  if (/^(\d)\1{10}$/.test(normalized)) {
+    throw new InvalidCpfError(cpf, "CPF cannot contain all identical digits.");
+  }
+
+  const firstCheckDigit = calculateCheckDigit(normalized, [10, 9, 8, 7, 6, 5, 4, 3, 2]);
+  if (firstCheckDigit !== Number(normalized[9])) {
+    throw new InvalidCpfError(cpf, "Invalid CPF first check digit.");
+  }
+
+  const secondCheckDigit = calculateCheckDigit(normalized, [11, 10, 9, 8, 7, 6, 5, 4, 3, 2]);
+  if (secondCheckDigit !== Number(normalized[10])) {
+    throw new InvalidCpfError(cpf, "Invalid CPF second check digit.");
+  }
+
+  return true;
+}
+
+export function safeValidate(
+  cpf: string,
+  options: ValidateOptions = {},
+): { success: true } | { success: false; error: InvalidCpfError } {
+  try {
+    validate(cpf, options);
+    return { success: true };
+  } catch (error) {
+    if (error instanceof InvalidCpfError) {
+      return { success: false, error };
+    }
+
+    return {
+      success: false,
+      error: new InvalidCpfError(cpf, "Unexpected CPF validation error."),
+    };
+  }
 }
