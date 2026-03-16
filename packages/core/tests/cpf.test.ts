@@ -1,5 +1,6 @@
-import { describe, expect, it } from "vitest";
-import { cpf } from "../src";
+import { describe, expect, it } from "vite-plus/test";
+
+import { cpf } from "../src/index.ts";
 
 describe("cpf.format", () => {
   it("formats valid unformatted CPF", () => {

@@ -1,43 +1,40 @@
 {
   "name": "@brutils/core",
-  "type": "module",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "TypeScript library for brazilian business utilities",
-  "author": "Paulo Henrique <pauloh1288@gmail.com>",
-  "license": "MIT",
-  "homepage": "https://github.com/youphenrique/brutils#readme",
-  "publishConfig": {
-    "access": "public"
+  "homepage": "https://github.com/author/library#readme",
+  "bugs": {
+    "url": "https://github.com/youphenrique/brutils/issues"
   },
+  "license": "MIT",
+  "author": "Paulo Henrique <pauloh1288@gmail.com>",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/youphenrique/brutils.git"
   },
-  "bugs": {
-    "url": "https://github.com/youphenrique/brutils/issues"
-  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "types": "./dist/index.d.mts",
   "exports": {
     ".": "./dist/index.mjs",
     "./package.json": "./package.json"
   },
-  "main": "./dist/index.mjs",
-  "module": "./dist/index.mjs",
-  "types": "./dist/index.d.mts",
-  "files": [
-    "dist"
-  ],
   "scripts": {
-    "build": "tsdown",
-    "dev": "tsdown --watch",
-    "test": "vitest",
+    "build": "vp pack",
+    "dev": "vp pack --watch",
+    "test": "vp test",
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "pnpm run build"
   },
   "devDependencies": {
-    "@types/node": "^25.0.3",
+    "@types/node": "^25.3.5",
+    "@typescript/native-preview": "7.0.0-dev.20260309.1",
     "bumpp": "^10.4.1",
-    "tsdown": "^0.20.3",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.18"
+    "vite": "catalog:",
+    "vite-plus": "catalog:",
+    "vitest": "catalog:"
   }
 }
