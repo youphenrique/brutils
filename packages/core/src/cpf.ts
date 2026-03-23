@@ -37,6 +37,7 @@ export interface FormatOptions {
  * @example
  * ```TypeScript
  * format("52263944621"); // "522.639.446-21"
+ * format("123", { pad: true }); // "000.000.001-23"
  * ```
  */
 export function format(value: string, options: FormatOptions = {}): string {
@@ -89,6 +90,30 @@ function normalizeForValidation(cpf: string, strict: boolean): string {
   return cpf.replace(/\D/g, "").padStart(LENGTH, "0");
 }
 
+/**
+ * Validates a CPF string.
+ *
+ * It checks for:
+ * - Length (exactly 11 digits).
+ * - Repeated digits (e.g., "111.111.111-11").
+ * - Checksum digits (first and second).
+ *
+ * If `strict` is `true`, it only accepts:
+ * - Exactly 11 digits (unformatted).
+ * - Standard mask `###.###.###-##` (formatted).
+ *
+ * @param cpf - CPF value to validate.
+ * @param options - Optional validation options.
+ * @returns `true` if the CPF is valid.
+ * @throws {InvalidCpfError} If the CPF is invalid (code: `INVALID_FORMAT`, `INVALID_LENGTH`, `REPEATED_DIGITS`, or `INVALID_CHECKSUM`).
+ *
+ * @example
+ * ```TypeScript
+ * validate("522.639.446-21"); // true
+ * validate("52263944621"); // true
+ * validate("123", { strict: true }); // Throws InvalidCpfError (INVALID_FORMAT)
+ * ```
+ */
 export function validate(cpf: string, options: ValidateOptions = {}): boolean {
   const strict = options.strict ?? false;
   const normalized = normalizeForValidation(cpf, strict);
@@ -114,6 +139,24 @@ export function validate(cpf: string, options: ValidateOptions = {}): boolean {
   return true;
 }
 
+/**
+ * Validates a CPF string without throwing errors.
+ *
+ * Instead of throwing, it returns a result object indicating success or failure.
+ * Useful for scenarios where throwing exceptions is not desired.
+ *
+ * @param cpf - CPF value to validate.
+ * @param options - Optional validation options.
+ * @returns An object with `success: true` if valid, or `success: false` and the `error` if invalid.
+ *
+ * @example
+ * ```TypeScript
+ * const result = safeValidate("123");
+ * if (!result.success) {
+ *   console.error(result.error.code); // "INVALID_LENGTH"
+ * }
+ * ```
+ */
 export function safeValidate(
   cpf: string,
   options: ValidateOptions = {},
@@ -128,7 +171,7 @@ export function safeValidate(
 
     return {
       success: false,
-      error: new InvalidCpfError(cpf, "INVALID_CHECKSUM", "Unexpected CPF validation error."),
+      error: invalid(cpf, "INVALID_CHECKSUM", "Unexpected CPF validation error."),
     };
   }
 }
