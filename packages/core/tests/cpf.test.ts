@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vite-plus/test";
 
 import { cpf } from "../src/index.ts";
+import { InvalidCpfError } from "../src/cpf.ts";
 
 describe("cpf.format", () => {
   it("formats valid unformatted CPF", () => {
@@ -51,10 +52,18 @@ describe("cpf.validate", () => {
     expect(cpf.validate("101#688!!!!!!542......36")).toBe(true);
   });
 
-  it("accepts short digit string after left-pad in default mode", () => {
-    expect(cpf.validate("00000000191")).toBe(true);
-    expect(cpf.validate("0000000191")).toBe(true);
-    expect(cpf.validate("5120101")).toBe(true);
+  it("doesn't accept short digit string", () => {
+    let result = cpf.safeValidate("0000000191");
+    expect(result.success).toBe(false);
+    if (result.error instanceof InvalidCpfError) {
+      expect(result.error.code).toBe("INVALID_LENGTH");
+    }
+
+    result = cpf.safeValidate("123");
+    expect(result.success).toBe(false);
+    if (result.error instanceof InvalidCpfError) {
+      expect(result.error.code).toBe("INVALID_LENGTH");
+    }
   });
 
   it("rejects all-same-digit CPF with REPEATED_DIGITS code", () => {
@@ -62,9 +71,11 @@ describe("cpf.validate", () => {
 
     expect(result.success).toBe(false);
 
-    if (!result.success) {
+    if (!result.success && result.error instanceof InvalidCpfError) {
       expect(result.error.code).toBe("REPEATED_DIGITS");
     }
+
+    expect(() => cpf.validate("99999999999")).toThrow();
   });
 
   it("rejects wrong length with INVALID_LENGTH code", () => {
@@ -72,7 +83,7 @@ describe("cpf.validate", () => {
 
     expect(result.success).toBe(false);
 
-    if (!result.success) {
+    if (!result.success && result.error instanceof InvalidCpfError) {
       expect(result.error.code).toBe("INVALID_LENGTH");
     }
   });
@@ -82,7 +93,7 @@ describe("cpf.validate", () => {
 
     expect(result.success).toBe(false);
 
-    if (!result.success) {
+    if (!result.success && result.error instanceof InvalidCpfError) {
       expect(result.error.code).toBe("INVALID_CHECKSUM");
     }
   });
@@ -92,7 +103,7 @@ describe("cpf.validate", () => {
 
     expect(result.success).toBe(false);
 
-    if (!result.success) {
+    if (!result.success && result.error instanceof InvalidCpfError) {
       expect(result.error.code).toBe("INVALID_FORMAT");
     }
   });
@@ -106,17 +117,17 @@ describe("cpf.validate", () => {
 describe("cpf.safeValidate", () => {
   it("never throws and returns success for valid CPF", () => {
     expect(() => cpf.safeValidate("12345678909")).not.toThrow();
-    expect(cpf.safeValidate("12345678909")).toEqual({ success: true });
+    expect(cpf.safeValidate("12345678909")).toEqual({ success: true, error: null });
   });
 
-  it("never throws and returns InvalidCpfError for invalid CPF", () => {
-    expect(() => cpf.safeValidate("123")).not.toThrow();
+  it("throws and returns InvalidCpfError for invalid CPF", () => {
+    expect(() => cpf.validate("123")).toThrow();
 
     const result = cpf.safeValidate("123", { strict: true });
 
     expect(result.success).toBe(false);
 
-    if (!result.success) {
+    if (!result.success && result.error instanceof InvalidCpfError) {
       expect(result.error).toBeInstanceOf(cpf.InvalidCpfError);
       expect(result.error.code).toBe("INVALID_FORMAT");
     }

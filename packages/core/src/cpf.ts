@@ -87,7 +87,7 @@ function normalizeForValidation(cpf: string, strict: boolean): string {
     invalid(cpf, "INVALID_FORMAT", "Strict mode only accepts 11 digits or ###.###.###-## format.");
   }
 
-  return cpf.replace(/\D/g, "").padStart(LENGTH, "0");
+  return cpf.replace(/\D/g, "");
 }
 
 /**
@@ -111,7 +111,8 @@ function normalizeForValidation(cpf: string, strict: boolean): string {
  * ```TypeScript
  * validate("522.639.446-21"); // true
  * validate("52263944621"); // true
- * validate("123", { strict: true }); // Throws InvalidCpfError (INVALID_FORMAT)
+ * validate("688#639!!!!!!446...21"); // true
+ * validate("688#639!!!!!!446...21", { strict: true }); // Throws InvalidCpfError (INVALID_FORMAT)
  * ```
  */
 export function validate(cpf: string, options: ValidateOptions = {}): boolean {
@@ -147,10 +148,12 @@ export function validate(cpf: string, options: ValidateOptions = {}): boolean {
  *
  * @param cpf - CPF value to validate.
  * @param options - Optional validation options.
- * @returns An object with `success: true` if valid, or `success: false` and the `error` if invalid.
+ * @returns An object with `success: true, error: null` if valid, and `success: false, error: InvalidCpfError` if invalid.
  *
  * @example
  * ```TypeScript
+ * safeValidate("522.639.446-21"); // { success: true, error: null }
+ *
  * const result = safeValidate("123");
  * if (!result.success) {
  *   console.error(result.error.code); // "INVALID_LENGTH"
@@ -160,10 +163,10 @@ export function validate(cpf: string, options: ValidateOptions = {}): boolean {
 export function safeValidate(
   cpf: string,
   options: ValidateOptions = {},
-): { success: true } | { success: false; error: InvalidCpfError } {
+): { success: boolean; error: InvalidCpfError | null } {
   try {
     validate(cpf, options);
-    return { success: true };
+    return { success: true, error: null };
   } catch (error) {
     if (error instanceof InvalidCpfError) {
       return { success: false, error };
