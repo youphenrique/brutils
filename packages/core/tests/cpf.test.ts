@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it, vi } from "vite-plus/test";
 
 import { cpf } from "../src/index.ts";
 import { InvalidCpfError } from "../src/cpf.ts";
@@ -130,6 +130,61 @@ describe("cpf.safeValidate", () => {
     if (!result.success && result.error instanceof InvalidCpfError) {
       expect(result.error).toBeInstanceOf(cpf.InvalidCpfError);
       expect(result.error.code).toBe("INVALID_FORMAT");
+    }
+  });
+});
+
+describe("cpf.generate", () => {
+  it("always generates a valid 11-digit CPF", () => {
+    const generated = cpf.generate();
+
+    expect(generated).toMatch(/^\d{11}$/);
+    expect(cpf.validate(generated)).toBe(true);
+  });
+
+  it("forces 9th digit to 8 for SP", () => {
+    for (let i = 0; i < 100; i += 1) {
+      expect(cpf.generate({ state: "SP" })[8]).toBe("8");
+    }
+  });
+
+  it("forces 9th digit to 1 for GO and DF", () => {
+    for (let i = 0; i < 100; i += 1) {
+      expect(cpf.generate({ state: "GO" })[8]).toBe("1");
+      expect(cpf.generate({ state: "DF" })[8]).toBe("1");
+    }
+  });
+
+  it("all-same-digit guard never mutates index 8", () => {
+    const randomSpy = vi.spyOn(Math, "random");
+
+    randomSpy
+      .mockReturnValueOnce(0.2)
+      .mockReturnValueOnce(0.2)
+      .mockReturnValueOnce(0.2)
+      .mockReturnValueOnce(0.2)
+      .mockReturnValueOnce(0.2)
+      .mockReturnValueOnce(0.2)
+      .mockReturnValueOnce(0.2)
+      .mockReturnValueOnce(0.2)
+      .mockReturnValueOnce(0.6)
+      .mockReturnValueOnce(0.3);
+
+    const generated = cpf.generate({ state: "AC" });
+
+    expect(generated[8]).toBe("2");
+
+    randomSpy.mockRestore();
+  });
+
+  it("returns formatted CPF when requested", () => {
+    expect(cpf.generate({ formatted: true })).toMatch(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/);
+  });
+
+  it("never generates all-same-digit CPF across 1000 runs", () => {
+    for (let i = 0; i < 1000; i += 1) {
+      const generated = cpf.generate();
+      expect(/^([0-9])\1{10}$/.test(generated)).toBe(false);
     }
   });
 });
