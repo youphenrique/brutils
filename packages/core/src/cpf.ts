@@ -1,5 +1,37 @@
 export const LENGTH = 11;
 
+export const STATES_REGION_MAP = {
+  DF: 1,
+  GO: 1,
+  MS: 1,
+  MT: 1,
+  TO: 1,
+  AC: 2,
+  AM: 2,
+  AP: 2,
+  PA: 2,
+  RO: 2,
+  RR: 2,
+  CE: 3,
+  MA: 3,
+  PI: 3,
+  AL: 4,
+  PB: 4,
+  PE: 4,
+  RN: 4,
+  BA: 5,
+  SE: 5,
+  MG: 6,
+  ES: 7,
+  RJ: 7,
+  SP: 8,
+  PR: 9,
+  SC: 9,
+  RS: 0,
+} as const;
+
+export type BrazilianState = keyof typeof STATES_REGION_MAP;
+
 export type CpfErrorCode =
   | "INVALID_FORMAT"
   | "INVALID_LENGTH"
@@ -23,6 +55,11 @@ export interface ValidateOptions {
 
 export interface FormatOptions {
   pad?: boolean;
+}
+
+export interface GenerateOptions {
+  state?: BrazilianState;
+  formatted?: boolean;
 }
 
 /**
@@ -62,7 +99,68 @@ function invalid(cpf: string, code: CpfErrorCode, message?: string): never {
   throw new InvalidCpfError(cpf, code, message);
 }
 
-function calculateCheckDigit(digits: string, weights: readonly number[]): number {
+function randomDigit(): number {
+  return Math.floor(Math.random() * 10);
+}
+
+function computeCheckDigit(digits: number[], weightStart: number): number {
+  const sum = digits.reduce((acc, digit, index) => acc + digit * (weightStart - index), 0);
+  const remainder = sum % 11;
+  return remainder < 2 ? 0 : 11 - remainder;
+}
+
+/**
+ * Generates a random, valid CPF.
+ *
+ * By default, it returns an unformatted 11-digit string. When `state` is
+ * provided, the 9th digit (index 8) is forced to the corresponding regional
+ * digit according to `STATES_REGION_MAP`.
+ *
+ * Generation rules:
+ * - Creates 8 random digits for indices `0..7`.
+ * - Sets index `8` from state mapping or random digit.
+ * - Applies an all-same-digit guard by re-rolling one digit in indices `0..7`.
+ * - Computes both check digits using CPF checksum weights.
+ *
+ * @param options - Optional generation options:
+ * - `state`: Brazilian state code used to force the CPF 9th digit region.
+ * - `formatted`: If `true`, returns CPF masked as `###.###.###-##`.
+ * @returns A valid CPF string, formatted or unformatted.
+ *
+ * @example
+ * ```TypeScript
+ * generate(); // "12345678909"
+ * generate({ formatted: true }); // "123.456.789-09"
+ * generate({ state: "SP" }); // 9th digit is always "8"
+ * ```
+ */
+export function generate(options: GenerateOptions = {}): string {
+  const { state, formatted = false } = options;
+
+  const baseDigits = Array.from({ length: 8 }, randomDigit);
+  baseDigits.push(state ? STATES_REGION_MAP[state] : randomDigit());
+
+  if (baseDigits.every((digit) => digit === baseDigits[0])) {
+    const rerollIndex = Math.floor(Math.random() * 8);
+
+    let rerolled = randomDigit();
+    while (rerolled === baseDigits[8]) {
+      rerolled = randomDigit();
+    }
+
+    baseDigits[rerollIndex] = rerolled;
+  }
+
+  const firstCheckDigit = computeCheckDigit(baseDigits, 10);
+  const withFirst = [...baseDigits, firstCheckDigit];
+  const secondCheckDigit = computeCheckDigit(withFirst, 11);
+
+  const generated = [...withFirst, secondCheckDigit].join("");
+
+  return formatted ? format(generated) : generated;
+}
+
+function calculateCheckDigit(digits: string, weights: number[]): number {
   const sum = weights.reduce((acc, weight, index) => {
     return acc + Number(digits[index]) * weight;
   }, 0);
