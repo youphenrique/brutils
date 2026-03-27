@@ -104,9 +104,9 @@ function randomDigit(): number {
 }
 
 function computeCheckDigit(digits: number[], weightStart: number): number {
-  const sum = digits.reduce((acc, d, i) => acc + d * (weightStart - i), 0);
-  const rem = sum % 11;
-  return rem < 2 ? 0 : 11 - rem;
+  const sum = digits.reduce((acc, digit, index) => acc + digit * (weightStart - index), 0);
+  const remainder = sum % 11;
+  return remainder < 2 ? 0 : 11 - remainder;
 }
 
 /**
@@ -160,7 +160,7 @@ export function generate(options: GenerateOptions = {}): string {
   return formatted ? format(generated) : generated;
 }
 
-function calculateCheckDigit(digits: string, weights: readonly number[]): number {
+function calculateCheckDigit(digits: string, weights: number[]): number {
   const sum = weights.reduce((acc, weight, index) => {
     return acc + Number(digits[index]) * weight;
   }, 0);
