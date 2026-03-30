@@ -5,16 +5,16 @@ import { CpfError } from "../src/cpf.ts";
 
 describe("cpf.normalize", () => {
   it("strips non-digit characters from a formatted CPF", () => {
-    expect(cpf.normalize("045.501.383-78")).toBe("04550138378");
+    expect(cpf.normalize("916.534.780-39")).toBe("91653478039");
   });
 
   it("handles partially formatted and mixed inputs", () => {
-    expect(cpf.normalize("045.501383-78")).toBe("04550138378");
-    expect(cpf.normalize("abc045!!!501...383--78def")).toBe("04550138378");
+    expect(cpf.normalize("916.534780-39")).toBe("91653478039");
+    expect(cpf.normalize("abc916!!!534...780--39def")).toBe("91653478039");
   });
 
   it("returns the same string for already-normalized input", () => {
-    expect(cpf.normalize("04550138378")).toBe("04550138378");
+    expect(cpf.normalize("91653478039")).toBe("91653478039");
   });
 
   it("returns an empty string for an empty input", () => {
@@ -31,15 +31,15 @@ describe("cpf.normalize", () => {
 
 describe("cpf.mask", () => {
   it("masks a normalized CPF correctly", () => {
-    expect(cpf.mask("04550138378")).toBe("045.***.***-78");
+    expect(cpf.mask("91653478039")).toBe("916.***.***-39");
   });
 
   it("masks a formatted CPF correctly", () => {
-    expect(cpf.mask("045.501.383-78")).toBe("045.***.***-78");
+    expect(cpf.mask("916.534.780-39")).toBe("916.***.***-39");
   });
 
   it("masks partially formatted and mixed inputs correctly", () => {
-    expect(cpf.mask("abc045!!!501...383--78def")).toBe("045.***.***-78");
+    expect(cpf.mask("abc916!!!534...780--39def")).toBe("916.***.***-39");
   });
 
   it("returns an empty string for an empty input", () => {

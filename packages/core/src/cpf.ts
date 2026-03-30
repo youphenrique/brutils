@@ -72,7 +72,7 @@ export interface GenerateOptions {
  *
  * @example
  * ```TypeScript
- * normalize("045.501.383-78"); // "04550138378"
+ * normalize("779.333.210-54"); // "77933321054"
  * ```
  */
 export function normalize(value: string): string {
@@ -94,7 +94,8 @@ export function normalize(value: string): string {
  *
  * @example
  * ```TypeScript
- * mask("04550138378"); // "045.***.***-78"
+ * mask("52263944621"); // "916.***.***-39"
+ * mask("522.639.446-21"); // "522.***.***-21"
  * ```
  */
 export function mask(value: string): string {
@@ -337,7 +338,7 @@ export function safeValidate(
 
   try {
     validate(cpf, options);
-    
+
     return { success: true, error: null };
   } catch (error) {
     if (error instanceof CpfError) {
