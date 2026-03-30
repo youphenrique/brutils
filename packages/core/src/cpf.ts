@@ -63,6 +63,62 @@ export interface GenerateOptions {
 }
 
 /**
+ * Normalizes a CPF string by stripping any non-digit characters.
+ * It returns the canonical raw form of the CPF (digits only).
+ *
+ * @param value - The CPF string to normalize. Can be formatted, unformatted, or mixed.
+ * @returns A digits-only string representing the normalized CPF.
+ * @throws {TypeError} If the provided value is not a string.
+ *
+ * @example
+ * ```TypeScript
+ * normalize("779.333.210-54"); // "77933321054"
+ * ```
+ */
+export function normalize(value: string): string {
+  if (typeof value !== "string") {
+    throw new TypeError(
+      `Expected a string for CPF normalization, but received ${value === null ? "null" : typeof value}`,
+    );
+  }
+  return value.replace(/\D/g, "");
+}
+
+/**
+ * Masks a CPF string, keeping the first 3 and last 2 digits visible.
+ * Digits 4-9 are replaced with asterisks (*), and standard separators are preserved.
+ *
+ * @param value - The CPF string to mask. Can be normalized or formatted.
+ * @returns The masked CPF string.
+ * @throws {TypeError} If the provided value is not a string.
+ *
+ * @example
+ * ```TypeScript
+ * mask("52263944621"); // "522.***.***-21"
+ * mask("522.639.446-21"); // "522.***.***-21"
+ * ```
+ */
+export function mask(value: string): string {
+  const normalized = normalize(value).slice(0, LENGTH);
+
+  if (normalized.length === 0) {
+    return "";
+  }
+
+  const part1 = normalized.slice(0, 3);
+  const part2 = normalized.slice(3, 6);
+  const part3 = normalized.slice(6, 9);
+  const part4 = normalized.slice(9, 11);
+
+  const maskedPart2 = part2 ? "*".repeat(part2.length) : "";
+  const maskedPart3 = part3 ? "*".repeat(part3.length) : "";
+
+  const masked = [part1, maskedPart2, maskedPart3].filter(Boolean).join(".");
+
+  return part4.length > 0 ? `${masked}-${part4}` : masked;
+}
+
+/**
  * Formats a CPF string into the standard Brazilian mask (`XXX.XXX.XXX-XX`).
  * Non-numeric characters are removed before formatting, and values longer than
  * 11 digits are truncated.
@@ -78,6 +134,12 @@ export interface GenerateOptions {
  * ```
  */
 export function format(value: string, options: FormatOptions = {}): string {
+  if (typeof value !== "string") {
+    throw new TypeError(
+      `Expected a string for CPF format, but received ${value === null ? "null" : typeof value}`,
+    );
+  }
+
   const digits = value.replace(/\D/g, "").slice(0, LENGTH);
   const normalized = options.pad ? digits.padStart(LENGTH, "0") : digits;
 
@@ -214,6 +276,12 @@ function normalizeForValidation(cpf: string, strict: boolean): string {
  * ```
  */
 export function validate(cpf: string, options: ValidateOptions = {}): boolean {
+  if (typeof cpf !== "string") {
+    throw new TypeError(
+      `Expected a string for CPF validate, but received ${cpf === null ? "null" : typeof cpf}`,
+    );
+  }
+
   const strict = options.strict ?? false;
   const normalized = normalizeForValidation(cpf, strict);
 
@@ -262,8 +330,15 @@ export function safeValidate(
   cpf: string,
   options: ValidateOptions = {},
 ): { success: boolean; error: CpfError | null } {
+  if (typeof cpf !== "string") {
+    throw new TypeError(
+      `Expected a string for CPF safeValidate, but received ${cpf === null ? "null" : typeof cpf}`,
+    );
+  }
+
   try {
     validate(cpf, options);
+
     return { success: true, error: null };
   } catch (error) {
     if (error instanceof CpfError) {

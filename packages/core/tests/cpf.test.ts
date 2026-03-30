@@ -3,6 +3,65 @@ import { describe, expect, it, vi } from "vite-plus/test";
 import { cpf } from "../src/index.ts";
 import { CpfError } from "../src/cpf.ts";
 
+describe("cpf.normalize", () => {
+  it("strips non-digit characters from a formatted CPF", () => {
+    expect(cpf.normalize("916.534.780-39")).toBe("91653478039");
+  });
+
+  it("handles partially formatted and mixed inputs", () => {
+    expect(cpf.normalize("916.534780-39")).toBe("91653478039");
+    expect(cpf.normalize("abc916!!!534...780--39def")).toBe("91653478039");
+  });
+
+  it("returns the same string for already-normalized input", () => {
+    expect(cpf.normalize("91653478039")).toBe("91653478039");
+  });
+
+  it("returns an empty string for an empty input", () => {
+    expect(cpf.normalize("")).toBe("");
+  });
+
+  it("throws a TypeError for invalid type input", () => {
+    expect(() => cpf.normalize(null as any)).toThrow(TypeError);
+    expect(() => cpf.normalize(undefined as any)).toThrow(TypeError);
+    expect(() => cpf.normalize(12345678909 as any)).toThrow(TypeError);
+    expect(() => cpf.normalize({} as any)).toThrow(TypeError);
+  });
+});
+
+describe("cpf.mask", () => {
+  it("masks a normalized CPF correctly", () => {
+    expect(cpf.mask("91653478039")).toBe("916.***.***-39");
+  });
+
+  it("masks a formatted CPF correctly", () => {
+    expect(cpf.mask("916.534.780-39")).toBe("916.***.***-39");
+  });
+
+  it("masks partially formatted and mixed inputs correctly", () => {
+    expect(cpf.mask("abc916!!!534...780--39def")).toBe("916.***.***-39");
+  });
+
+  it("returns an empty string for an empty input", () => {
+    expect(cpf.mask("")).toBe("");
+  });
+
+  it("handles short inputs progressively", () => {
+    expect(cpf.mask("12")).toBe("12");
+    expect(cpf.mask("1234")).toBe("123.*");
+    expect(cpf.mask("123456")).toBe("123.***");
+    expect(cpf.mask("1234567")).toBe("123.***.*");
+    expect(cpf.mask("1234567890")).toBe("123.***.***-0");
+  });
+
+  it("throws a TypeError for invalid type input", () => {
+    expect(() => cpf.mask(null as any)).toThrow(TypeError);
+    expect(() => cpf.mask(undefined as any)).toThrow(TypeError);
+    expect(() => cpf.mask(12345678909 as any)).toThrow(TypeError);
+    expect(() => cpf.mask({} as any)).toThrow(TypeError);
+  });
+});
+
 describe("cpf.format", () => {
   it("formats valid unformatted CPF", () => {
     expect(cpf.format("52263944621")).toBe("522.639.446-21");
@@ -36,6 +95,13 @@ describe("cpf.format", () => {
     expect(cpf.format("", { pad: true })).toBe("000.000.000-00");
     expect(cpf.format("9", { pad: true })).toBe("000.000.000-09");
     expect(cpf.format("94389575104", { pad: true })).toBe("943.895.751-04");
+  });
+
+  it("throws a TypeError for invalid type input", () => {
+    expect(() => cpf.format(null as any)).toThrow(TypeError);
+    expect(() => cpf.format(undefined as any)).toThrow(TypeError);
+    expect(() => cpf.format(12345678909 as any)).toThrow(TypeError);
+    expect(() => cpf.format({} as any)).toThrow(TypeError);
   });
 });
 
@@ -112,6 +178,13 @@ describe("cpf.validate", () => {
     expect(cpf.validate("12345678909", { strict: true })).toBe(true);
     expect(cpf.validate("123.456.789-09", { strict: true })).toBe(true);
   });
+
+  it("throws a TypeError for invalid type input", () => {
+    expect(() => cpf.validate(null as any)).toThrow(TypeError);
+    expect(() => cpf.validate(undefined as any)).toThrow(TypeError);
+    expect(() => cpf.validate(12345678909 as any)).toThrow(TypeError);
+    expect(() => cpf.validate({} as any)).toThrow(TypeError);
+  });
 });
 
 describe("cpf.safeValidate", () => {
@@ -131,6 +204,13 @@ describe("cpf.safeValidate", () => {
       expect(result.error).toBeInstanceOf(cpf.CpfError);
       expect(result.error.code).toBe("INVALID_FORMAT");
     }
+  });
+
+  it("throws a TypeError for invalid type input", () => {
+    expect(() => cpf.safeValidate(null as any)).toThrow(TypeError);
+    expect(() => cpf.safeValidate(undefined as any)).toThrow(TypeError);
+    expect(() => cpf.safeValidate(12345678909 as any)).toThrow(TypeError);
+    expect(() => cpf.safeValidate({} as any)).toThrow(TypeError);
   });
 });
 
