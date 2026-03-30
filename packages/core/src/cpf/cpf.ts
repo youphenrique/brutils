@@ -1,6 +1,13 @@
 import { assertOptions } from "../_shared/assert-options";
 import { LENGTH, STATES_REGION_MAP } from "./constants";
-import { CpfError, invalid, randomDigit, computeCheckDigit, calculateCheckDigit, normalizeForValidation } from "./utils";
+import {
+  CpfError,
+  invalid,
+  randomDigit,
+  computeCheckDigit,
+  calculateCheckDigit,
+  normalizeForValidation,
+} from "./utils";
 import type { FormatOptions, GenerateOptions, ValidateOptions } from "./types";
 
 /**
@@ -60,12 +67,12 @@ export function mask(value: string): string {
 }
 
 /**
- * Formats a CPF string into the standard Brazilian mask (\`XXX.XXX.XXX-XX\`).
+ * Formats a CPF string into the standard Brazilian mask (`XXX.XXX.XXX-XX`).
  * Non-numeric characters are removed before formatting, and values longer than
  * 11 digits are truncated.
  *
  * @param value - CPF value in any form (formatted, unformatted, or mixed).
- * @param options - Optional formatting options. Set \`pad\` to \`true\` to left-pad with zeros up to 11 digits.
+ * @param options - Optional formatting options. Set `pad` to `true` to left-pad with zeros up to 11 digits.
  * @returns The CPF string with progressive or full mask applied.
  *
  * @example
@@ -103,19 +110,19 @@ export function format(value: string, options: FormatOptions = {}): string {
 /**
  * Generates a random, valid CPF.
  *
- * By default, it returns an unformatted 11-digit string. When \`state\` is
+ * By default, it returns an unformatted 11-digit string. When `state` is
  * provided, the 9th digit (index 8) is forced to the corresponding regional
- * digit according to \`STATES_REGION_MAP\`.
+ * digit according to `STATES_REGION_MAP\`.
  *
  * Generation rules:
- * - Creates 8 random digits for indices \`0..7\`.
- * - Sets index \`8\` from state mapping or random digit.
- * - Applies an all-same-digit guard by re-rolling one digit in indices \`0..7\`.
+ * - Creates 8 random digits for indices `0..7`.
+ * - Sets index `8` from state mapping or random digit.
+ * - Applies an all-same-digit guard by re-rolling one digit in indices `0..7`.
  * - Computes both check digits using CPF checksum weights.
  *
  * @param options - Optional generation options:
- * - \`state\`: Brazilian state code used to force the CPF 9th digit region.
- * - \`formatted\`: If \`true\`, returns CPF masked as \`###.###.###-##\`.
+ * - `state`: Brazilian state code used to force the CPF 9th digit region.
+ * - `formatted`: If `true`, returns CPF masked as `###.###.###-##`.
  * @returns A valid CPF string, formatted or unformatted.
  *
  * @example
@@ -161,14 +168,14 @@ export function generate(options: GenerateOptions = {}): string {
  * - Repeated digits (e.g., "111.111.111-11").
  * - Checksum digits (first and second).
  *
- * If \`strict\` is \`true\`, it only accepts:
+ * If `strict` is `true`, it only accepts:
  * - Exactly 11 digits (unformatted).
- * - Standard mask \`###.###.###-##\` (formatted).
+ * - Standard mask `###.###.###-##` (formatted).
  *
  * @param cpf - CPF value to validate.
  * @param options - Optional validation options.
- * @returns \`true\` if the CPF is valid.
- * @throws {CpfError} If the CPF is invalid (code: \`INVALID_FORMAT\`, \`INVALID_LENGTH\`, \`REPEATED_DIGITS\`, or \`INVALID_CHECKSUM\`).
+ * @returns `true` if the CPF is valid.
+ * @throws {CpfError} If the CPF is invalid (code: `INVALID_FORMAT`, `INVALID_LENGTH`, `REPEATED_DIGITS`, or `INVALID_CHECKSUM`).
  *
  * @example
  * ```TypeScript
@@ -219,7 +226,7 @@ export function validate(cpf: string, options: ValidateOptions = {}): boolean {
  *
  * @param cpf - CPF value to validate.
  * @param options - Optional validation options.
- * @returns An object with \`success: true, error: null\` if valid, and \`success: false, error: InvalidCpfError\` if invalid.
+ * @returns An object with `success: true, error: null` if valid, and `success: false, error: InvalidCpfError` if invalid.
  *
  * @example
  * ```TypeScript
