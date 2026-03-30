@@ -64,17 +64,41 @@ describe("ufs", () => {
     });
   });
 
-  describe("get()", () => {
+  describe("getByCode()", () => {
     it("returns UF by code", () => {
-      const sp = ufs.get("SP");
+      const sp = ufs.getByCode("SP");
       expect(sp).not.toBeNull();
       expect(sp?.code).toBe("SP");
       expect(sp?.name).toBe("São Paulo");
       expect(sp?.region.code).toBe("SE");
     });
 
+    it("returns UF ignoring case and accents", () => {
+      const sp1 = ufs.getByCode("sp");
+      expect(sp1?.code).toBe("SP");
+    });
+
+    it("returns null for unknown inputs", () => {
+      expect(ufs.getByCode("XX")).toBeNull();
+      expect(ufs.getByCode("São Paulo")).toBeNull();
+      expect(ufs.getByCode("")).toBeNull();
+    });
+
+    it("throws TypeError for invalid non-string input", () => {
+      // @ts-expect-error Testing invalid runtime value
+      expect(() => ufs.getByCode(null)).toThrowError(TypeError);
+      // @ts-expect-error Testing invalid runtime value
+      expect(() => ufs.getByCode(undefined)).toThrowError(TypeError);
+      // @ts-expect-error Testing invalid runtime value
+      expect(() => ufs.getByCode(123)).toThrowError(TypeError);
+      // @ts-expect-error Testing invalid runtime value
+      expect(() => ufs.getByCode({})).toThrowError(TypeError);
+    });
+  });
+
+  describe("getByName()", () => {
     it("returns UF by name", () => {
-      const rj = ufs.get("Rio de Janeiro");
+      const rj = ufs.getByName("Rio de Janeiro");
       expect(rj).not.toBeNull();
       expect(rj?.code).toBe("RJ");
       expect(rj?.name).toBe("Rio de Janeiro");
@@ -82,34 +106,34 @@ describe("ufs", () => {
     });
 
     it("returns UF ignoring case and accents", () => {
-      const sp1 = ufs.get("são paulo");
+      const sp1 = ufs.getByName("são paulo");
       expect(sp1?.code).toBe("SP");
 
-      const sp2 = ufs.get("SAO PAULO");
+      const sp2 = ufs.getByName("SAO PAULO");
       expect(sp2?.code).toBe("SP");
 
-      const ce = ufs.get("ceará");
+      const ce = ufs.getByName("ceará");
       expect(ce?.code).toBe("CE");
 
-      const mg = ufs.get(" minas Gerais ");
+      const mg = ufs.getByName(" minas Gerais ");
       expect(mg?.code).toBe("MG");
     });
 
     it("returns null for unknown inputs", () => {
-      expect(ufs.get("XX")).toBeNull();
-      expect(ufs.get("Unknown State")).toBeNull();
-      expect(ufs.get("")).toBeNull();
+      expect(ufs.getByName("Unknown State")).toBeNull();
+      expect(ufs.getByName("SP")).toBeNull(); // Code shouldn't match name
+      expect(ufs.getByName("")).toBeNull();
     });
 
     it("throws TypeError for invalid non-string input", () => {
       // @ts-expect-error Testing invalid runtime value
-      expect(() => ufs.get(null)).toThrowError(TypeError);
+      expect(() => ufs.getByName(null)).toThrowError(TypeError);
       // @ts-expect-error Testing invalid runtime value
-      expect(() => ufs.get(undefined)).toThrowError(TypeError);
+      expect(() => ufs.getByName(undefined)).toThrowError(TypeError);
       // @ts-expect-error Testing invalid runtime value
-      expect(() => ufs.get(123)).toThrowError(TypeError);
+      expect(() => ufs.getByName(123)).toThrowError(TypeError);
       // @ts-expect-error Testing invalid runtime value
-      expect(() => ufs.get({})).toThrowError(TypeError);
+      expect(() => ufs.getByName({})).toThrowError(TypeError);
     });
   });
 });
