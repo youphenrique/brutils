@@ -97,6 +97,18 @@ describe("cpf.format", () => {
     expect(cpf.format("94389575104", { pad: true })).toBe("943.895.751-04");
   });
 
+  it("accepts undefined options and uses defaults", () => {
+    expect(cpf.format("52263944621", undefined)).toBe("522.639.446-21");
+  });
+
+  it("throws a TypeError for invalid options type", () => {
+    expect(() => cpf.format("52263944621", null as any)).toThrow(TypeError);
+    expect(() => cpf.format("52263944621", 123 as any)).toThrow(TypeError);
+    expect(() => cpf.format("52263944621", "x" as any)).toThrow(TypeError);
+    expect(() => cpf.format("52263944621", true as any)).toThrow(TypeError);
+    expect(() => cpf.format("52263944621", [] as any)).toThrow(TypeError);
+  });
+
   it("throws a TypeError for invalid type input", () => {
     expect(() => cpf.format(null as any)).toThrow(TypeError);
     expect(() => cpf.format(undefined as any)).toThrow(TypeError);
@@ -179,6 +191,18 @@ describe("cpf.validate", () => {
     expect(cpf.validate("123.456.789-09", { strict: true })).toBe(true);
   });
 
+  it("accepts undefined options and uses defaults", () => {
+    expect(cpf.validate("12345678909", undefined)).toBe(true);
+  });
+
+  it("throws a TypeError for invalid options type", () => {
+    expect(() => cpf.validate("12345678909", null as any)).toThrow(TypeError);
+    expect(() => cpf.validate("12345678909", 123 as any)).toThrow(TypeError);
+    expect(() => cpf.validate("12345678909", "x" as any)).toThrow(TypeError);
+    expect(() => cpf.validate("12345678909", true as any)).toThrow(TypeError);
+    expect(() => cpf.validate("12345678909", [] as any)).toThrow(TypeError);
+  });
+
   it("throws a TypeError for invalid type input", () => {
     expect(() => cpf.validate(null as any)).toThrow(TypeError);
     expect(() => cpf.validate(undefined as any)).toThrow(TypeError);
@@ -204,6 +228,18 @@ describe("cpf.safeValidate", () => {
       expect(result.error).toBeInstanceOf(cpf.CpfError);
       expect(result.error.code).toBe("INVALID_FORMAT");
     }
+  });
+
+  it("accepts undefined options and uses defaults", () => {
+    expect(cpf.safeValidate("12345678909", undefined)).toEqual({ success: true, error: null });
+  });
+
+  it("throws a TypeError for invalid options type", () => {
+    expect(() => cpf.safeValidate("12345678909", null as any)).toThrow(TypeError);
+    expect(() => cpf.safeValidate("12345678909", 123 as any)).toThrow(TypeError);
+    expect(() => cpf.safeValidate("12345678909", "x" as any)).toThrow(TypeError);
+    expect(() => cpf.safeValidate("12345678909", true as any)).toThrow(TypeError);
+    expect(() => cpf.safeValidate("12345678909", [] as any)).toThrow(TypeError);
   });
 
   it("throws a TypeError for invalid type input", () => {
@@ -266,5 +302,17 @@ describe("cpf.generate", () => {
       const generated = cpf.generate();
       expect(/^([0-9])\1{10}$/.test(generated)).toBe(false);
     }
+  });
+
+  it("accepts undefined options and uses defaults", () => {
+    expect(cpf.generate(undefined)).toMatch(/^\d{11}$/);
+  });
+
+  it("throws a TypeError for invalid options type", () => {
+    expect(() => cpf.generate(null as any)).toThrow(TypeError);
+    expect(() => cpf.generate(123 as any)).toThrow(TypeError);
+    expect(() => cpf.generate("x" as any)).toThrow(TypeError);
+    expect(() => cpf.generate(true as any)).toThrow(TypeError);
+    expect(() => cpf.generate([] as any)).toThrow(TypeError);
   });
 });

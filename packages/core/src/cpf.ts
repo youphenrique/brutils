@@ -1,3 +1,5 @@
+import { assertOptions } from "./lib/assert-options";
+
 export const LENGTH = 11;
 
 export const STATES_REGION_MAP = {
@@ -140,6 +142,8 @@ export function format(value: string, options: FormatOptions = {}): string {
     );
   }
 
+  assertOptions(options);
+
   const digits = value.replace(/\D/g, "").slice(0, LENGTH);
   const normalized = options.pad ? digits.padStart(LENGTH, "0") : digits;
 
@@ -197,6 +201,8 @@ function computeCheckDigit(digits: number[], weightStart: number): number {
  * ```
  */
 export function generate(options: GenerateOptions = {}): string {
+  assertOptions(options);
+
   const { state, formatted = false } = options;
 
   const baseDigits = Array.from({ length: 8 }, randomDigit);
@@ -282,6 +288,8 @@ export function validate(cpf: string, options: ValidateOptions = {}): boolean {
     );
   }
 
+  assertOptions(options);
+
   const strict = options.strict ?? false;
   const normalized = normalizeForValidation(cpf, strict);
 
@@ -335,6 +343,8 @@ export function safeValidate(
       `Expected a string for CPF safeValidate, but received ${cpf === null ? "null" : typeof cpf}`,
     );
   }
+
+  assertOptions(options);
 
   try {
     validate(cpf, options);
