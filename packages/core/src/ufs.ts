@@ -1,3 +1,5 @@
+import { assertOptions } from "./lib/assert-options";
+
 export interface Region {
   code: string;
   name: string;
@@ -66,17 +68,11 @@ export interface ListOptions {
  * ```
  */
 export function list(options?: ListOptions): UF[] {
-  if (options !== undefined && (typeof options !== "object" || options === null)) {
-    throw new TypeError("Options must be an object.");
-  }
+  assertOptions(options);
 
   let result = [...UFS];
 
   if (options?.region !== undefined) {
-    if (typeof options.region !== "string") {
-      throw new TypeError("Option 'region' must be a string.");
-    }
-
     const regionUpper = options.region.toUpperCase();
 
     if (!REGIONS[regionUpper]) {
@@ -86,15 +82,10 @@ export function list(options?: ListOptions): UF[] {
     result = result.filter((uf) => uf.region.code === regionUpper);
   }
 
-  if (options?.sortBy !== undefined) {
-    if (typeof options.sortBy !== "string") {
-      throw new TypeError("Option 'sortBy' must be a string.");
-    }
-    if (options.sortBy !== "code" && options.sortBy !== "name") {
-      throw new Error(
-        `Invalid sortBy: ${String(options.sortBy)}. Valid options are 'code' or 'name'.`,
-      );
-    }
+  if (options?.sortBy !== undefined && options.sortBy !== "code" && options.sortBy !== "name") {
+    throw new Error(
+      `Invalid sortBy: ${String(options.sortBy)}. Valid options are 'code' or 'name'.`,
+    );
   }
 
   const sortBy = options?.sortBy ?? "code";

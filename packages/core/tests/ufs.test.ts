@@ -47,20 +47,24 @@ describe("ufs", () => {
     });
 
     it("throws TypeError for invalid non-object options", () => {
+      expect(ufs.list(undefined)).toHaveLength(27);
       // @ts-expect-error Testing invalid runtime value
       expect(() => ufs.list("SP")).toThrowError(TypeError);
       // @ts-expect-error Testing invalid runtime value
       expect(() => ufs.list(null)).toThrowError(TypeError);
+      // @ts-expect-error Testing invalid runtime value
+      expect(() => ufs.list(123)).toThrowError(TypeError);
+      // @ts-expect-error Testing invalid runtime value
+      expect(() => ufs.list(true)).toThrowError(TypeError);
+      // @ts-expect-error Testing invalid runtime value
+      expect(() => ufs.list([])).toThrowError(TypeError);
     });
 
-    it("throws TypeError for invalid region type", () => {
+    it("throws Error for invalid sortBy value", () => {
       // @ts-expect-error Testing invalid runtime value
-      expect(() => ufs.list({ region: 123 })).toThrowError(TypeError);
-    });
-
-    it("throws TypeError for invalid sortBy type", () => {
+      expect(() => ufs.list({ sortBy: "invalid" })).toThrowError(/Invalid sortBy/);
       // @ts-expect-error Testing invalid runtime value
-      expect(() => ufs.list({ sortBy: 123 })).toThrowError(TypeError);
+      expect(() => ufs.list({ sortBy: 123 })).toThrowError(/Invalid sortBy/);
     });
   });
 
