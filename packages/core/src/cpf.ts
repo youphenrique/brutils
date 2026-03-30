@@ -63,6 +63,61 @@ export interface GenerateOptions {
 }
 
 /**
+ * Normalizes a CPF string by stripping any non-digit characters.
+ * It returns the canonical raw form of the CPF (digits only).
+ *
+ * @param value - The CPF string to normalize. Can be formatted, unformatted, or mixed.
+ * @returns A digits-only string representing the normalized CPF.
+ * @throws {TypeError} If the provided value is not a string.
+ *
+ * @example
+ * ```TypeScript
+ * normalize("045.501.383-78"); // "04550138378"
+ * ```
+ */
+export function normalize(value: string): string {
+  if (typeof value !== "string") {
+    throw new TypeError(
+      `Expected a string for CPF normalization, but received ${value === null ? "null" : typeof value}`,
+    );
+  }
+  return value.replace(/\D/g, "");
+}
+
+/**
+ * Masks a CPF string, keeping the first 3 and last 2 digits visible.
+ * Digits 4-9 are replaced with asterisks (*), and standard separators are preserved.
+ *
+ * @param value - The CPF string to mask. Can be normalized or formatted.
+ * @returns The masked CPF string.
+ * @throws {TypeError} If the provided value is not a string.
+ *
+ * @example
+ * ```TypeScript
+ * mask("04550138378"); // "045.***.***-78"
+ * ```
+ */
+export function mask(value: string): string {
+  const normalized = normalize(value).slice(0, LENGTH);
+
+  if (normalized.length === 0) {
+    return "";
+  }
+
+  const part1 = normalized.slice(0, 3);
+  const part2 = normalized.slice(3, 6);
+  const part3 = normalized.slice(6, 9);
+  const part4 = normalized.slice(9, 11);
+
+  const maskedPart2 = part2 ? "*".repeat(part2.length) : "";
+  const maskedPart3 = part3 ? "*".repeat(part3.length) : "";
+
+  const masked = [part1, maskedPart2, maskedPart3].filter(Boolean).join(".");
+
+  return part4.length > 0 ? `${masked}-${part4}` : masked;
+}
+
+/**
  * Formats a CPF string into the standard Brazilian mask (`XXX.XXX.XXX-XX`).
  * Non-numeric characters are removed before formatting, and values longer than
  * 11 digits are truncated.

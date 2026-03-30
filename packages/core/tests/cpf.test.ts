@@ -3,6 +3,65 @@ import { describe, expect, it, vi } from "vite-plus/test";
 import { cpf } from "../src/index.ts";
 import { InvalidCpfError } from "../src/cpf.ts";
 
+describe("cpf.normalize", () => {
+  it("strips non-digit characters from a formatted CPF", () => {
+    expect(cpf.normalize("045.501.383-78")).toBe("04550138378");
+  });
+
+  it("handles partially formatted and mixed inputs", () => {
+    expect(cpf.normalize("045.501383-78")).toBe("04550138378");
+    expect(cpf.normalize("abc045!!!501...383--78def")).toBe("04550138378");
+  });
+
+  it("returns the same string for already-normalized input", () => {
+    expect(cpf.normalize("04550138378")).toBe("04550138378");
+  });
+
+  it("returns an empty string for an empty input", () => {
+    expect(cpf.normalize("")).toBe("");
+  });
+
+  it("throws a TypeError for invalid type input", () => {
+    expect(() => cpf.normalize(null as any)).toThrow(TypeError);
+    expect(() => cpf.normalize(undefined as any)).toThrow(TypeError);
+    expect(() => cpf.normalize(12345678909 as any)).toThrow(TypeError);
+    expect(() => cpf.normalize({} as any)).toThrow(TypeError);
+  });
+});
+
+describe("cpf.mask", () => {
+  it("masks a normalized CPF correctly", () => {
+    expect(cpf.mask("04550138378")).toBe("045.***.***-78");
+  });
+
+  it("masks a formatted CPF correctly", () => {
+    expect(cpf.mask("045.501.383-78")).toBe("045.***.***-78");
+  });
+
+  it("masks partially formatted and mixed inputs correctly", () => {
+    expect(cpf.mask("abc045!!!501...383--78def")).toBe("045.***.***-78");
+  });
+
+  it("returns an empty string for an empty input", () => {
+    expect(cpf.mask("")).toBe("");
+  });
+
+  it("handles short inputs progressively", () => {
+    expect(cpf.mask("12")).toBe("12");
+    expect(cpf.mask("1234")).toBe("123.*");
+    expect(cpf.mask("123456")).toBe("123.***");
+    expect(cpf.mask("1234567")).toBe("123.***.*");
+    expect(cpf.mask("1234567890")).toBe("123.***.***-0");
+  });
+
+  it("throws a TypeError for invalid type input", () => {
+    expect(() => cpf.mask(null as any)).toThrow(TypeError);
+    expect(() => cpf.mask(undefined as any)).toThrow(TypeError);
+    expect(() => cpf.mask(12345678909 as any)).toThrow(TypeError);
+    expect(() => cpf.mask({} as any)).toThrow(TypeError);
+  });
+});
+
 describe("cpf.format", () => {
   it("formats valid unformatted CPF", () => {
     expect(cpf.format("52263944621")).toBe("522.639.446-21");
