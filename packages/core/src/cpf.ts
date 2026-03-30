@@ -38,14 +38,14 @@ export type CpfErrorCode =
   | "REPEATED_DIGITS"
   | "INVALID_CHECKSUM";
 
-export class InvalidCpfError extends Error {
+export class CpfError extends Error {
   constructor(
     public readonly cpf: string,
     public readonly code: CpfErrorCode,
     message?: string,
   ) {
     super(message ?? `Invalid CPF: "${cpf}" (${code})`);
-    this.name = "InvalidCpfError";
+    this.name = "CpfError";
   }
 }
 
@@ -96,7 +96,7 @@ export function format(value: string, options: FormatOptions = {}): string {
 }
 
 function invalid(cpf: string, code: CpfErrorCode, message?: string): never {
-  throw new InvalidCpfError(cpf, code, message);
+  throw new CpfError(cpf, code, message);
 }
 
 function randomDigit(): number {
@@ -203,7 +203,7 @@ function normalizeForValidation(cpf: string, strict: boolean): string {
  * @param cpf - CPF value to validate.
  * @param options - Optional validation options.
  * @returns `true` if the CPF is valid.
- * @throws {InvalidCpfError} If the CPF is invalid (code: `INVALID_FORMAT`, `INVALID_LENGTH`, `REPEATED_DIGITS`, or `INVALID_CHECKSUM`).
+ * @throws {CpfError} If the CPF is invalid (code: `INVALID_FORMAT`, `INVALID_LENGTH`, `REPEATED_DIGITS`, or `INVALID_CHECKSUM`).
  *
  * @example
  * ```TypeScript
@@ -261,12 +261,12 @@ export function validate(cpf: string, options: ValidateOptions = {}): boolean {
 export function safeValidate(
   cpf: string,
   options: ValidateOptions = {},
-): { success: boolean; error: InvalidCpfError | null } {
+): { success: boolean; error: CpfError | null } {
   try {
     validate(cpf, options);
     return { success: true, error: null };
   } catch (error) {
-    if (error instanceof InvalidCpfError) {
+    if (error instanceof CpfError) {
       return { success: false, error };
     }
 
