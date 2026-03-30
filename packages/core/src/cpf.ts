@@ -94,7 +94,7 @@ export function normalize(value: string): string {
  *
  * @example
  * ```TypeScript
- * mask("52263944621"); // "916.***.***-39"
+ * mask("52263944621"); // "522.***.***-21"
  * mask("522.639.446-21"); // "522.***.***-21"
  * ```
  */
