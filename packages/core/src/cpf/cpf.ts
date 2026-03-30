@@ -1,68 +1,7 @@
-import { assertOptions } from "./lib/assert-options";
-
-export const LENGTH = 11;
-
-export const STATES_REGION_MAP = {
-  DF: 1,
-  GO: 1,
-  MS: 1,
-  MT: 1,
-  TO: 1,
-  AC: 2,
-  AM: 2,
-  AP: 2,
-  PA: 2,
-  RO: 2,
-  RR: 2,
-  CE: 3,
-  MA: 3,
-  PI: 3,
-  AL: 4,
-  PB: 4,
-  PE: 4,
-  RN: 4,
-  BA: 5,
-  SE: 5,
-  MG: 6,
-  ES: 7,
-  RJ: 7,
-  SP: 8,
-  PR: 9,
-  SC: 9,
-  RS: 0,
-} as const;
-
-export type BrazilianState = keyof typeof STATES_REGION_MAP;
-
-export type CpfErrorCode =
-  | "INVALID_FORMAT"
-  | "INVALID_LENGTH"
-  | "REPEATED_DIGITS"
-  | "INVALID_CHECKSUM";
-
-export class CpfError extends Error {
-  constructor(
-    public readonly cpf: string,
-    public readonly code: CpfErrorCode,
-    message?: string,
-  ) {
-    super(message ?? `Invalid CPF: "${cpf}" (${code})`);
-    this.name = "CpfError";
-  }
-}
-
-export interface ValidateOptions {
-  strict?: boolean;
-}
-
-export interface FormatOptions {
-  pad?: boolean;
-}
-
-export interface GenerateOptions {
-  state?: BrazilianState;
-  formatted?: boolean;
-}
+import { assertOptions } from "../_shared/assert-options";
+import { LENGTH, STATES_REGION_MAP } from "./constants";
+import { CpfError, invalid, randomDigit, computeCheckDigit, calculateCheckDigit, normalizeForValidation } from "./utils";
+import type { FormatOptions, GenerateOptions, ValidateOptions } from "./types";
 
 /**
  * Normalizes a CPF string by stripping any non-digit characters.
@@ -121,12 +60,12 @@ export function mask(value: string): string {
 }
 
 /**
- * Formats a CPF string into the standard Brazilian mask (`XXX.XXX.XXX-XX`).
+ * Formats a CPF string into the standard Brazilian mask (\`XXX.XXX.XXX-XX\`).
  * Non-numeric characters are removed before formatting, and values longer than
  * 11 digits are truncated.
  *
  * @param value - CPF value in any form (formatted, unformatted, or mixed).
- * @param options - Optional formatting options. Set `pad` to `true` to left-pad with zeros up to 11 digits.
+ * @param options - Optional formatting options. Set \`pad\` to \`true\` to left-pad with zeros up to 11 digits.
  * @returns The CPF string with progressive or full mask applied.
  *
  * @example
@@ -161,36 +100,22 @@ export function format(value: string, options: FormatOptions = {}): string {
   return part4.length > 0 ? `${masked}-${part4}` : masked;
 }
 
-function invalid(cpf: string, code: CpfErrorCode, message?: string): never {
-  throw new CpfError(cpf, code, message);
-}
-
-function randomDigit(): number {
-  return Math.floor(Math.random() * 10);
-}
-
-function computeCheckDigit(digits: number[], weightStart: number): number {
-  const sum = digits.reduce((acc, digit, index) => acc + digit * (weightStart - index), 0);
-  const remainder = sum % 11;
-  return remainder < 2 ? 0 : 11 - remainder;
-}
-
 /**
  * Generates a random, valid CPF.
  *
- * By default, it returns an unformatted 11-digit string. When `state` is
+ * By default, it returns an unformatted 11-digit string. When \`state\` is
  * provided, the 9th digit (index 8) is forced to the corresponding regional
- * digit according to `STATES_REGION_MAP`.
+ * digit according to \`STATES_REGION_MAP\`.
  *
  * Generation rules:
- * - Creates 8 random digits for indices `0..7`.
- * - Sets index `8` from state mapping or random digit.
- * - Applies an all-same-digit guard by re-rolling one digit in indices `0..7`.
+ * - Creates 8 random digits for indices \`0..7\`.
+ * - Sets index \`8\` from state mapping or random digit.
+ * - Applies an all-same-digit guard by re-rolling one digit in indices \`0..7\`.
  * - Computes both check digits using CPF checksum weights.
  *
  * @param options - Optional generation options:
- * - `state`: Brazilian state code used to force the CPF 9th digit region.
- * - `formatted`: If `true`, returns CPF masked as `###.###.###-##`.
+ * - \`state\`: Brazilian state code used to force the CPF 9th digit region.
+ * - \`formatted\`: If \`true\`, returns CPF masked as \`###.###.###-##\`.
  * @returns A valid CPF string, formatted or unformatted.
  *
  * @example
@@ -228,34 +153,6 @@ export function generate(options: GenerateOptions = {}): string {
   return formatted ? format(generated) : generated;
 }
 
-function calculateCheckDigit(digits: string, weights: number[]): number {
-  const sum = weights.reduce((acc, weight, index) => {
-    return acc + Number(digits[index]) * weight;
-  }, 0);
-
-  const remainder = sum % 11;
-  return remainder < 2 ? 0 : 11 - remainder;
-}
-
-function normalizeForValidation(cpf: string, strict: boolean): string {
-  if (strict) {
-    const rawPattern = /^\d{11}$/;
-    const maskedPattern = /^\d{3}\.\d{3}\.\d{3}-\d{2}$/;
-
-    if (rawPattern.test(cpf)) {
-      return cpf;
-    }
-
-    if (maskedPattern.test(cpf)) {
-      return cpf.replace(/\D/g, "");
-    }
-
-    invalid(cpf, "INVALID_FORMAT", "Strict mode only accepts 11 digits or ###.###.###-## format.");
-  }
-
-  return cpf.replace(/\D/g, "");
-}
-
 /**
  * Validates a CPF string.
  *
@@ -264,14 +161,14 @@ function normalizeForValidation(cpf: string, strict: boolean): string {
  * - Repeated digits (e.g., "111.111.111-11").
  * - Checksum digits (first and second).
  *
- * If `strict` is `true`, it only accepts:
+ * If \`strict\` is \`true\`, it only accepts:
  * - Exactly 11 digits (unformatted).
- * - Standard mask `###.###.###-##` (formatted).
+ * - Standard mask \`###.###.###-##\` (formatted).
  *
  * @param cpf - CPF value to validate.
  * @param options - Optional validation options.
- * @returns `true` if the CPF is valid.
- * @throws {CpfError} If the CPF is invalid (code: `INVALID_FORMAT`, `INVALID_LENGTH`, `REPEATED_DIGITS`, or `INVALID_CHECKSUM`).
+ * @returns \`true\` if the CPF is valid.
+ * @throws {CpfError} If the CPF is invalid (code: \`INVALID_FORMAT\`, \`INVALID_LENGTH\`, \`REPEATED_DIGITS\`, or \`INVALID_CHECKSUM\`).
  *
  * @example
  * ```TypeScript
@@ -322,7 +219,7 @@ export function validate(cpf: string, options: ValidateOptions = {}): boolean {
  *
  * @param cpf - CPF value to validate.
  * @param options - Optional validation options.
- * @returns An object with `success: true, error: null` if valid, and `success: false, error: InvalidCpfError` if invalid.
+ * @returns An object with \`success: true, error: null\` if valid, and \`success: false, error: InvalidCpfError\` if invalid.
  *
  * @example
  * ```TypeScript
@@ -357,7 +254,7 @@ export function safeValidate(
 
     return {
       success: false,
-      error: invalid(cpf, "INVALID_CHECKSUM", "Unexpected CPF validation error."),
+      error: new CpfError(cpf, "INVALID_CHECKSUM", "Unexpected CPF validation error."),
     };
   }
 }
