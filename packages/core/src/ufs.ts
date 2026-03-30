@@ -76,10 +76,13 @@ export function list(options?: ListOptions): UF[] {
     if (typeof options.region !== "string") {
       throw new TypeError("Option 'region' must be a string.");
     }
+
     const regionUpper = options.region.toUpperCase();
+
     if (!REGIONS[regionUpper]) {
       throw new Error(`Invalid region: ${options.region}. Valid regions are N, NE, CO, SE, S.`);
     }
+
     result = result.filter((uf) => uf.region.code === regionUpper);
   }
 
@@ -94,19 +97,14 @@ export function list(options?: ListOptions): UF[] {
     }
   }
 
-  const sortBy = options?.sortBy || "code";
+  const sortBy = options?.sortBy ?? "code";
 
-  result.sort((a, b) => {
-    return a[sortBy].localeCompare(b[sortBy], "pt-BR");
-  });
+  result.sort((a, b) => a[sortBy].localeCompare(b[sortBy], "pt-BR"));
 
   return result;
 }
 
-/**
- * Normalizes a string by converting it to lowercase and removing accents.
- */
-function normalizeString(str: string): string {
+function normalizeFilter(str: string): string {
   return str
     .toLowerCase()
     .normalize("NFD")
@@ -131,10 +129,10 @@ export function getByCode(code: string): UF | null {
     throw new TypeError(`Code must be a string, got ${typeof code}`);
   }
 
-  const normalizedCode = normalizeString(code).trim();
+  const normalizedCode = normalizeFilter(code).trim();
 
   for (const uf of UFS) {
-    if (normalizeString(uf.code) === normalizedCode) {
+    if (normalizeFilter(uf.code) === normalizedCode) {
       return uf;
     }
   }
@@ -160,21 +158,13 @@ export function getByName(name: string): UF | null {
     throw new TypeError(`Name must be a string, got ${typeof name}`);
   }
 
-  const normalizedName = normalizeString(name).trim();
+  const normalizedName = normalizeFilter(name).trim();
 
   for (const uf of UFS) {
-    if (normalizeString(uf.name) === normalizedName) {
+    if (normalizeFilter(uf.name) === normalizedName) {
       return uf;
     }
   }
 
   return null;
 }
-
-export const ufs = {
-  list,
-  getByCode,
-  getByName,
-};
-
-export default ufs;
