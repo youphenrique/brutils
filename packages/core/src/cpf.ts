@@ -133,6 +133,12 @@ export function mask(value: string): string {
  * ```
  */
 export function format(value: string, options: FormatOptions = {}): string {
+  if (typeof value !== "string") {
+    throw new TypeError(
+      `Expected a string for CPF format, but received ${value === null ? "null" : typeof value}`,
+    );
+  }
+
   const digits = value.replace(/\D/g, "").slice(0, LENGTH);
   const normalized = options.pad ? digits.padStart(LENGTH, "0") : digits;
 
@@ -269,6 +275,12 @@ function normalizeForValidation(cpf: string, strict: boolean): string {
  * ```
  */
 export function validate(cpf: string, options: ValidateOptions = {}): boolean {
+  if (typeof cpf !== "string") {
+    throw new TypeError(
+      `Expected a string for CPF validate, but received ${cpf === null ? "null" : typeof cpf}`,
+    );
+  }
+
   const strict = options.strict ?? false;
   const normalized = normalizeForValidation(cpf, strict);
 
@@ -317,6 +329,12 @@ export function safeValidate(
   cpf: string,
   options: ValidateOptions = {},
 ): { success: boolean; error: InvalidCpfError | null } {
+  if (typeof cpf !== "string") {
+    throw new TypeError(
+      `Expected a string for CPF safeValidate, but received ${cpf === null ? "null" : typeof cpf}`,
+    );
+  }
+
   try {
     validate(cpf, options);
     return { success: true, error: null };

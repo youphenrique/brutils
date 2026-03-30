@@ -96,6 +96,13 @@ describe("cpf.format", () => {
     expect(cpf.format("9", { pad: true })).toBe("000.000.000-09");
     expect(cpf.format("94389575104", { pad: true })).toBe("943.895.751-04");
   });
+
+  it("throws a TypeError for invalid type input", () => {
+    expect(() => cpf.format(null as any)).toThrow(TypeError);
+    expect(() => cpf.format(undefined as any)).toThrow(TypeError);
+    expect(() => cpf.format(12345678909 as any)).toThrow(TypeError);
+    expect(() => cpf.format({} as any)).toThrow(TypeError);
+  });
 });
 
 describe("cpf.validate", () => {
@@ -171,6 +178,13 @@ describe("cpf.validate", () => {
     expect(cpf.validate("12345678909", { strict: true })).toBe(true);
     expect(cpf.validate("123.456.789-09", { strict: true })).toBe(true);
   });
+
+  it("throws a TypeError for invalid type input", () => {
+    expect(() => cpf.validate(null as any)).toThrow(TypeError);
+    expect(() => cpf.validate(undefined as any)).toThrow(TypeError);
+    expect(() => cpf.validate(12345678909 as any)).toThrow(TypeError);
+    expect(() => cpf.validate({} as any)).toThrow(TypeError);
+  });
 });
 
 describe("cpf.safeValidate", () => {
@@ -190,6 +204,13 @@ describe("cpf.safeValidate", () => {
       expect(result.error).toBeInstanceOf(cpf.InvalidCpfError);
       expect(result.error.code).toBe("INVALID_FORMAT");
     }
+  });
+
+  it("throws a TypeError for invalid type input", () => {
+    expect(() => cpf.safeValidate(null as any)).toThrow(TypeError);
+    expect(() => cpf.safeValidate(undefined as any)).toThrow(TypeError);
+    expect(() => cpf.safeValidate(12345678909 as any)).toThrow(TypeError);
+    expect(() => cpf.safeValidate({} as any)).toThrow(TypeError);
   });
 });
 
