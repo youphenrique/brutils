@@ -85,8 +85,8 @@ export function format(value: string, options: CnpjFormatOptions = {}): string {
  * Generates a random, structurally valid CNPJ with correct check digits.
  *
  * @param options - Optional generation options:
- *   - `alphanumeric`: If `true`, the first 8 base characters may include
- *     uppercase letters; positions 9–12 are always digits.
+ *   - `alphanumeric`: If `true`, the first 12 base characters may include
+ *     uppercase letters; positions 13–14 are always digits.
  *   - `formatted`: If `true`, returns CNPJ in `XX.XXX.XXX/XXXX-XX` format.
  * @returns A valid CNPJ string.
  *
@@ -103,13 +103,8 @@ export function generate(options: CnpjGenerateOptions = {}): string {
   const { formatted = false, alphanumeric = false } = options;
   const charset = alphanumeric ? ALPHANUMERIC_CHARS : DIGIT_CHARS;
 
-  // Build the first 8 characters (may include letters if alphanumeric)
-  const chars: string[] = Array.from({ length: 8 }, () => randomFrom(charset));
-
-  // Positions 9–12 are always digits (branch segment)
-  for (let i = 0; i < 4; i++) {
-    chars.push(randomFrom(DIGIT_CHARS));
-  }
+  // Build the first 12 characters (may include letters if alphanumeric)
+  const chars: string[] = Array.from({ length: 12 }, () => randomFrom(charset));
 
   // Guard: prevent all-same-character base
   if (chars.every((c) => c === chars[0])) {

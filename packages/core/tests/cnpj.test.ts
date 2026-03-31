@@ -117,6 +117,16 @@ describe("cnpj.validate", () => {
     expect(cnpj.validate("12.ABC.345/01DE-35")).toEqual({ success: true, error: null });
   });
 
+  it("rejects the example with incorrect check digits", () => {
+    expect(cnpj.validate("12.ABC.345/01DE-99").success).toBe(false);
+    expect(cnpj.validate("12.ABC.345/01DE-00").success).toBe(false);
+  });
+
+  it("rejects check digits that are only partially correct", () => {
+    expect(cnpj.validate("12.ABC.345/01DE-30").success).toBe(false);
+    expect(cnpj.validate("12.ABC.345/01DE-05").success).toBe(false);
+  });
+
   it("accepts alphanumeric CNPJ with spaces stripped", () => {
     expect(cnpj.validate("12ABC3450 1DE35").success).toBe(true);
   });
@@ -255,11 +265,11 @@ describe("cnpj.generate", () => {
     }
   });
 
-  it("alphanumeric mode: positions 9–12 (branch segment) are always digits", () => {
+  it("alphanumeric mode: positions 13–14 (branch segment) are always digits", () => {
     for (let i = 0; i < 100; i++) {
       const generated = cnpj.generate({ alphanumeric: true });
-      const branch = generated.slice(8, 12);
-      expect(branch).toMatch(/^\d{4}$/);
+      const branch = generated.slice(12, 14);
+      expect(branch).toMatch(/^\d{2}$/);
     }
   });
 
@@ -289,18 +299,4 @@ describe("cnpj.generate", () => {
 
 // ─── Algorithm correctness (SERPRO official example) ─────────────────────────
 
-describe("CNPJ DV algorithm — official SERPRO example", () => {
-  it("validates the official SERPRO alphanumeric CNPJ: 12.ABC.345/01DE-35", () => {
-    expect(cnpj.validate("12.ABC.345/01DE-35").success).toBe(true);
-  });
-
-  it("rejects the example with incorrect check digits", () => {
-    expect(cnpj.validate("12.ABC.345/01DE-99").success).toBe(false);
-    expect(cnpj.validate("12.ABC.345/01DE-00").success).toBe(false);
-  });
-
-  it("rejects check digits that are only partially correct", () => {
-    expect(cnpj.validate("12.ABC.345/01DE-30").success).toBe(false);
-    expect(cnpj.validate("12.ABC.345/01DE-05").success).toBe(false);
-  });
-});
+describe("CNPJ DV algorithm — official SERPRO example", () => {});
