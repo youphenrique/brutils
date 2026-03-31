@@ -1,8 +1,6 @@
 import type { STATES_REGION_MAP } from "./constants";
 import type { CpfError } from "./utils";
 
-export type UfCode = keyof typeof STATES_REGION_MAP;
-
 export type CpfErrorCode =
   | "INVALID_FORMAT"
   | "INVALID_LENGTH"
@@ -24,6 +22,6 @@ export interface CpfFormatOptions {
 }
 
 export interface CpfGenerateOptions {
-  state?: UfCode;
+  state?: keyof typeof STATES_REGION_MAP;
   formatted?: boolean;
 }
