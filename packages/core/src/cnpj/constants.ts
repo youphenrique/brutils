@@ -1,0 +1,5 @@
+export const LENGTH = 14;
+export const BASE_LENGTH = 12;
+
+export const ALPHANUMERIC_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+export const DIGIT_CHARS = "0123456789";

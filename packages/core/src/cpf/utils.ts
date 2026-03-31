@@ -1,18 +1,14 @@
 import type { CpfErrorCode } from "./types";
+import { LENGTH } from "./constants";
 
 export class CpfError extends Error {
-  constructor(
-    public readonly cpf: string,
-    public readonly code: CpfErrorCode,
-    message?: string,
-  ) {
-    super(message ?? `Invalid CPF: "${cpf}" (${code})`);
-    this.name = "CpfError";
-  }
-}
+  readonly code: CpfErrorCode;
 
-export function invalid(cpf: string, code: CpfErrorCode, message?: string): never {
-  throw new CpfError(cpf, code, message);
+  constructor(code: CpfErrorCode, message?: string) {
+    super(message ?? code);
+    this.name = "CpfError";
+    this.code = code;
+  }
 }
 
 export function randomDigit(): number {
@@ -22,6 +18,7 @@ export function randomDigit(): number {
 export function computeCheckDigit(digits: number[], weightStart: number): number {
   const sum = digits.reduce((acc, digit, index) => acc + digit * (weightStart - index), 0);
   const remainder = sum % 11;
+
   return remainder < 2 ? 0 : 11 - remainder;
 }
 
@@ -31,10 +28,11 @@ export function calculateCheckDigit(digits: string, weights: number[]): number {
   }, 0);
 
   const remainder = sum % 11;
+
   return remainder < 2 ? 0 : 11 - remainder;
 }
 
-export function normalizeForValidation(cpf: string, strict: boolean): string {
+export function preNormalize(cpf: string, strict: boolean): string {
   if (strict) {
     const rawPattern = /^\d{11}$/;
     const maskedPattern = /^\d{3}\.\d{3}\.\d{3}-\d{2}$/;
@@ -47,8 +45,35 @@ export function normalizeForValidation(cpf: string, strict: boolean): string {
       return cpf.replace(/\D/g, "");
     }
 
-    invalid(cpf, "INVALID_FORMAT", "Strict mode only accepts 11 digits or ###.###.###-## format.");
+    throw new CpfError(
+      "INVALID_FORMAT",
+      "Strict mode only accepts 11 digits or ###.###.###-## format.",
+    );
   }
 
   return cpf.replace(/\D/g, "");
+}
+
+/**
+ * Core validator — always throws CpfError on failure, never returns false.
+ * Used internally by cpf.validate().
+ */
+export function assertValid(normalized: string): void {
+  if (normalized.length !== LENGTH) {
+    throw new CpfError("INVALID_LENGTH", "CPF must contain exactly 11 digits.");
+  }
+
+  if (/^(\d)\1{10}$/.test(normalized)) {
+    throw new CpfError("REPEATED_DIGITS", "CPF cannot contain all identical digits.");
+  }
+
+  const firstCheckDigit = calculateCheckDigit(normalized, [10, 9, 8, 7, 6, 5, 4, 3, 2]);
+  if (firstCheckDigit !== Number(normalized[9])) {
+    throw new CpfError("INVALID_CHECKSUM", "Invalid CPF check digits.");
+  }
+
+  const secondCheckDigit = calculateCheckDigit(normalized, [11, 10, 9, 8, 7, 6, 5, 4, 3, 2]);
+  if (secondCheckDigit !== Number(normalized[10])) {
+    throw new CpfError("INVALID_CHECKSUM", "Invalid CPF check digits.");
+  }
 }
