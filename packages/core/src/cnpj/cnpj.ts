@@ -1,16 +1,12 @@
 import { assertOptions } from "../_shared/assert-options";
-import { LENGTH } from "./constants";
-import { CnpjError, calcCheckDigits, clean, cleanStrict, assertValid } from "./utils";
-import type { SafeResult } from "./utils";
-import type { FormatOptions, GenerateOptions, ValidateOptions } from "./types";
-
-// Re-export for public surface
-export { CnpjError };
-export type { SafeResult };
-
-// Alphanumeric characters valid in CNPJ base (A-Z, 0-9)
-const ALPHANUMERIC_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-const DIGIT_CHARS = "0123456789";
+import { ALPHANUMERIC_CHARS, DIGIT_CHARS, LENGTH } from "./constants";
+import { assertValid, calcCheckDigits, preNormalize, CnpjError } from "./utils";
+import type {
+  CnpjFormatOptions,
+  CnpjGenerateOptions,
+  CnpjValidateResult,
+  CnpjValidateOptions,
+} from "./types";
 
 function randomFrom(chars: string): string {
   return chars[Math.floor(Math.random() * chars.length)];
@@ -36,7 +32,8 @@ export function normalize(value: string): string {
       `Expected a string for CNPJ normalization, but received ${value === null ? "null" : typeof value}`,
     );
   }
-  return clean(value);
+
+  return preNormalize(value, false);
 }
 
 /**
@@ -59,7 +56,7 @@ export function normalize(value: string): string {
  * format("12ABC34501DE35"); // "12.ABC.345/01DE-35"
  * ```
  */
-export function format(value: string, options: FormatOptions = {}): string {
+export function format(value: string, options: CnpjFormatOptions = {}): string {
   if (typeof value !== "string") {
     throw new TypeError(
       `Expected a string for CNPJ format, but received ${value === null ? "null" : typeof value}`,
@@ -68,8 +65,8 @@ export function format(value: string, options: FormatOptions = {}): string {
 
   assertOptions(options);
 
-  const cleaned = clean(value);
-  const normalized = options.pad ? cleaned.padStart(LENGTH, "0") : cleaned;
+  const preNormalized = preNormalize(value, false);
+  const normalized = options.pad ? preNormalized.padStart(LENGTH, "0") : preNormalized;
 
   if (normalized.length !== LENGTH) {
     return value;
@@ -100,7 +97,7 @@ export function format(value: string, options: FormatOptions = {}): string {
  * generate({ alphanumeric: true }); // "12ABC34501DE35"
  * ```
  */
-export function generate(options: GenerateOptions = {}): string {
+export function generate(options: CnpjGenerateOptions = {}): string {
   assertOptions(options);
 
   const { formatted = false, alphanumeric = false } = options;
@@ -118,9 +115,11 @@ export function generate(options: GenerateOptions = {}): string {
   if (chars.every((c) => c === chars[0])) {
     const firstChar = chars[0];
     let replacement = randomFrom(charset);
+
     while (replacement === firstChar) {
       replacement = randomFrom(charset);
     }
+
     chars[0] = replacement;
   }
 
@@ -140,24 +139,27 @@ export function generate(options: GenerateOptions = {}): string {
  * - All-same-character rejection
  * - Correct check digits
  *
- * In strict mode, throws `CnpjError` with the appropriate code instead of
- * returning `false`. Additionally, rejects any character that is not
- * alphanumeric or standard CNPJ punctuation (`. / -`).
+ * In strict mode, only two input formats are accepted:
+ * - Raw: exactly 12 alphanumeric characters followed by 2 digits (e.g., `"73450392000164"`).
+ * - Masked: standard CNPJ punctuation (`XX.XXX.XXX/XXXX-XX`) where the last
+ *   two characters must be digits (e.g., `"73.450.392/0001-64"`).
+ *
+ * Any other format throws `CnpjError("INVALID_FORMAT")`.
+ * Never throws for validation errors — always returns a result object.
  *
  * @param value - CNPJ value to validate.
  * @param options - Optional validation options.
- * @returns `true` if valid; `false` if invalid (non-strict mode).
- * @throws {CnpjError} On invalid input in strict mode.
- * @throws {TypeError} If `value` is not a string.
+ * @returns `{ success: true, error: null }` if valid; `{ success: false, error: CnpjError }` if invalid.
+ * @throws {TypeError} If `value` is not a string or options is not a plain object.
  *
  * @example
  * ```TypeScript
- * validate("73.450.392/0001-64"); // true
- * validate("00000000000000"); // false
- * validate("73$450392000164", { strict: true }); // throws CnpjError("INVALID_FORMAT")
+ * validate("73.450.392/0001-64"); // { success: true, error: null }
+ * validate("12ABC34501DE99"); // { success: false, error: CnpjError (INVALID_CHECK_DIGITS) }
+ * validate("73$450392000164", { strict: true }); // { success: false, error: CnpjError (INVALID_FORMAT) }
  * ```
  */
-export function validate(value: string, options: ValidateOptions = {}): boolean {
+export function validate(value: string, options: CnpjValidateOptions = {}): CnpjValidateResult {
   if (typeof value !== "string") {
     throw new TypeError(
       `Expected a string for CNPJ validate, but received ${value === null ? "null" : typeof value}`,
@@ -166,59 +168,20 @@ export function validate(value: string, options: ValidateOptions = {}): boolean 
 
   assertOptions(options);
 
-  const strict = options.strict ?? false;
-
   try {
-    const cleaned = strict ? cleanStrict(value) : clean(value);
-    assertValid(cleaned);
-    return true;
-  } catch (error) {
-    if (error instanceof CnpjError) {
-      if (strict) {
-        throw error;
-      }
-      return false;
-    }
-    throw error;
-  }
-}
+    const normalized = preNormalize(value, options.strict ?? false);
 
-/**
- * Validates a CNPJ string without throwing errors.
- *
- * Returns a result object indicating success or failure. Useful when
- * throwing exceptions is undesirable.
- *
- * @param value - CNPJ value to validate.
- * @returns `{ success: true, error: null }` if valid;
- *   `{ success: false, error: CnpjError }` if invalid.
- * @throws {TypeError} If `value` is not a string.
- *
- * @example
- * ```TypeScript
- * safeValidate("12.ABC.345/01DE-35"); // { success: true, error: null }
- *
- * const result = safeValidate("12ABC34501DE99");
- * if (!result.success) {
- *   console.error(result.error.code); // "INVALID_CHECK_DIGITS"
- * }
- * ```
- */
-export function safeValidate(value: string): SafeResult {
-  if (typeof value !== "string") {
-    throw new TypeError(
-      `Expected a string for CNPJ safeValidate, but received ${value === null ? "null" : typeof value}`,
-    );
-  }
+    assertValid(normalized);
 
-  try {
-    const cleaned = clean(value);
-    assertValid(cleaned);
     return { success: true, error: null };
   } catch (error) {
     if (error instanceof CnpjError) {
       return { success: false, error };
     }
-    throw error;
+
+    return {
+      success: false,
+      error: new CnpjError("UNKNOWN_ERROR", "Unexpected CNPJ validation error."),
+    };
   }
 }

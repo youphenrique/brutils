@@ -118,81 +118,65 @@ describe("cpf.format", () => {
 });
 
 describe("cpf.validate", () => {
-  it("accepts valid unformatted CPF", () => {
-    expect(cpf.validate("12345678909")).toBe(true);
+  it("returns success for valid unformatted CPF", () => {
+    expect(cpf.validate("12345678909")).toEqual({ success: true, error: null });
   });
 
-  it("accepts valid formatted CPF", () => {
-    expect(cpf.validate("123.456.789-09")).toBe(true);
+  it("returns success for valid formatted CPF", () => {
+    expect(cpf.validate("123.456.789-09")).toEqual({ success: true, error: null });
   });
 
-  it("accepts valid CPF with garbage in default mode", () => {
-    expect(cpf.validate("101#688!!!!!!542......36")).toBe(true);
+  it("returns success for valid CPF with garbage in default mode", () => {
+    expect(cpf.validate("101#688!!!!!!542......36").success).toBe(true);
   });
 
-  it("doesn't accept short digit string", () => {
-    let result = cpf.safeValidate("0000000191");
+  it("returns failure with INVALID_LENGTH for short digit string", () => {
+    let result = cpf.validate("0000000191");
     expect(result.success).toBe(false);
-    if (result.error instanceof CpfError) {
-      expect(result.error.code).toBe("INVALID_LENGTH");
-    }
+    expect(result.error?.code).toBe("INVALID_LENGTH");
 
-    result = cpf.safeValidate("123");
+    result = cpf.validate("123");
     expect(result.success).toBe(false);
-    if (result.error instanceof CpfError) {
-      expect(result.error.code).toBe("INVALID_LENGTH");
-    }
+    expect(result.error?.code).toBe("INVALID_LENGTH");
   });
 
-  it("rejects all-same-digit CPF with REPEATED_DIGITS code", () => {
-    const result = cpf.safeValidate("000.000.000-00");
-
+  it("returns failure with REPEATED_DIGITS for all-same-digit CPF", () => {
+    const result = cpf.validate("000.000.000-00");
     expect(result.success).toBe(false);
+    expect(result.error?.code).toBe("REPEATED_DIGITS");
 
-    if (!result.success && result.error instanceof CpfError) {
-      expect(result.error.code).toBe("REPEATED_DIGITS");
-    }
-
-    expect(() => cpf.validate("99999999999")).toThrow();
+    expect(cpf.validate("99999999999").success).toBe(false);
   });
 
-  it("rejects wrong length with INVALID_LENGTH code", () => {
-    const result = cpf.safeValidate("1234567890912");
-
+  it("returns failure with INVALID_LENGTH for wrong length", () => {
+    const result = cpf.validate("1234567890912");
     expect(result.success).toBe(false);
-
-    if (!result.success && result.error instanceof CpfError) {
-      expect(result.error.code).toBe("INVALID_LENGTH");
-    }
+    expect(result.error?.code).toBe("INVALID_LENGTH");
   });
 
-  it("rejects incorrect check digits with INVALID_CHECKSUM code", () => {
-    const result = cpf.safeValidate("12345678900");
-
+  it("returns failure with INVALID_CHECKSUM for incorrect check digits", () => {
+    const result = cpf.validate("12345678900");
     expect(result.success).toBe(false);
-
-    if (!result.success && result.error instanceof CpfError) {
-      expect(result.error.code).toBe("INVALID_CHECKSUM");
-    }
+    expect(result.error?.code).toBe("INVALID_CHECKSUM");
   });
 
-  it("strict mode rejects malformed input with INVALID_FORMAT code", () => {
-    const result = cpf.safeValidate("101#688!!!!!!542......36", { strict: true });
-
+  it("strict mode returns failure with INVALID_FORMAT for malformed input", () => {
+    const result = cpf.validate("101#688!!!!!!542......36", { strict: true });
     expect(result.success).toBe(false);
-
-    if (!result.success && result.error instanceof CpfError) {
-      expect(result.error.code).toBe("INVALID_FORMAT");
-    }
+    expect(result.error).toBeInstanceOf(CpfError);
+    expect(result.error?.code).toBe("INVALID_FORMAT");
   });
 
-  it("strict mode accepts raw and masked valid inputs", () => {
-    expect(cpf.validate("12345678909", { strict: true })).toBe(true);
-    expect(cpf.validate("123.456.789-09", { strict: true })).toBe(true);
+  it("strict mode returns success for raw and masked valid inputs", () => {
+    expect(cpf.validate("12345678909", { strict: true })).toEqual({ success: true, error: null });
+    expect(cpf.validate("123.456.789-09", { strict: true })).toEqual({
+      success: true,
+      error: null,
+    });
   });
 
   it("accepts undefined options and uses defaults", () => {
-    expect(cpf.validate("12345678909", undefined)).toBe(true);
+    expect(cpf.validate("12345678909", undefined)).toEqual({ success: true, error: null });
   });
 
   it("throws a TypeError for invalid options type", () => {
@@ -211,42 +195,31 @@ describe("cpf.validate", () => {
   });
 });
 
-describe("cpf.safeValidate", () => {
-  it("never throws and returns success for valid CPF", () => {
-    expect(() => cpf.safeValidate("12345678909")).not.toThrow();
-    expect(cpf.safeValidate("12345678909")).toEqual({ success: true, error: null });
+describe("CpfError", () => {
+  it("is a proper subclass of Error", () => {
+    const err = new CpfError("INVALID_FORMAT");
+    expect(err).toBeInstanceOf(Error);
+    expect(err).toBeInstanceOf(CpfError);
   });
 
-  it("throws and returns CpfError for invalid CPF", () => {
-    expect(() => cpf.validate("123")).toThrow();
-
-    const result = cpf.safeValidate("123", { strict: true });
-
-    expect(result.success).toBe(false);
-
-    if (!result.success && result.error instanceof CpfError) {
-      expect(result.error).toBeInstanceOf(cpf.CpfError);
-      expect(result.error.code).toBe("INVALID_FORMAT");
-    }
+  it("has name CpfError", () => {
+    const err = new CpfError("INVALID_LENGTH");
+    expect(err.name).toBe("CpfError");
   });
 
-  it("accepts undefined options and uses defaults", () => {
-    expect(cpf.safeValidate("12345678909", undefined)).toEqual({ success: true, error: null });
+  it("stores the error code", () => {
+    const err = new CpfError("INVALID_CHECKSUM");
+    expect(err.code).toBe("INVALID_CHECKSUM");
   });
 
-  it("throws a TypeError for invalid options type", () => {
-    expect(() => cpf.safeValidate("12345678909", null as any)).toThrow(TypeError);
-    expect(() => cpf.safeValidate("12345678909", 123 as any)).toThrow(TypeError);
-    expect(() => cpf.safeValidate("12345678909", "x" as any)).toThrow(TypeError);
-    expect(() => cpf.safeValidate("12345678909", true as any)).toThrow(TypeError);
-    expect(() => cpf.safeValidate("12345678909", [] as any)).toThrow(TypeError);
+  it("uses code as default message when no message is provided", () => {
+    const err = new CpfError("INVALID_FORMAT");
+    expect(err.message).toBe("INVALID_FORMAT");
   });
 
-  it("throws a TypeError for invalid type input", () => {
-    expect(() => cpf.safeValidate(null as any)).toThrow(TypeError);
-    expect(() => cpf.safeValidate(undefined as any)).toThrow(TypeError);
-    expect(() => cpf.safeValidate(12345678909 as any)).toThrow(TypeError);
-    expect(() => cpf.safeValidate({} as any)).toThrow(TypeError);
+  it("uses custom message when provided", () => {
+    const err = new CpfError("INVALID_LENGTH", "Custom message");
+    expect(err.message).toBe("Custom message");
   });
 });
 
@@ -255,7 +228,7 @@ describe("cpf.generate", () => {
     const generated = cpf.generate();
 
     expect(generated).toMatch(/^\d{11}$/);
-    expect(cpf.validate(generated)).toBe(true);
+    expect(cpf.validate(generated).success).toBe(true);
   });
 
   it("forces 9th digit to 8 for SP", () => {

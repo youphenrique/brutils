@@ -1,14 +1,12 @@
 import { assertOptions } from "../_shared/assert-options";
 import { LENGTH, STATES_REGION_MAP } from "./constants";
-import {
-  CpfError,
-  invalid,
-  randomDigit,
-  computeCheckDigit,
-  calculateCheckDigit,
-  normalizeForValidation,
-} from "./utils";
-import type { FormatOptions, GenerateOptions, ValidateOptions } from "./types";
+import { CpfError, randomDigit, computeCheckDigit, preNormalize, assertValid } from "./utils";
+import type {
+  CpfFormatOptions,
+  CpfGenerateOptions,
+  CpfValidateOptions,
+  CpfValidateResult,
+} from "./types";
 
 /**
  * Normalizes a CPF string by stripping any non-digit characters.
@@ -81,7 +79,7 @@ export function mask(value: string): string {
  * format("123", { pad: true }); // "000.000.001-23"
  * ```
  */
-export function format(value: string, options: FormatOptions = {}): string {
+export function format(value: string, options: CpfFormatOptions = {}): string {
   if (typeof value !== "string") {
     throw new TypeError(
       `Expected a string for CPF format, but received ${value === null ? "null" : typeof value}`,
@@ -132,7 +130,7 @@ export function format(value: string, options: FormatOptions = {}): string {
  * generate({ state: "SP" }); // 9th digit is always "8"
  * ```
  */
-export function generate(options: GenerateOptions = {}): string {
+export function generate(options: CpfGenerateOptions = {}): string {
   assertOptions(options);
 
   const { state, formatted = false } = options;
@@ -172,86 +170,34 @@ export function generate(options: GenerateOptions = {}): string {
  * - Exactly 11 digits (unformatted).
  * - Standard mask `###.###.###-##` (formatted).
  *
- * @param cpf - CPF value to validate.
+ * Never throws for validation errors — always returns a result object.
+ *
+ * @param value - CPF value to validate.
  * @param options - Optional validation options.
- * @returns `true` if the CPF is valid.
- * @throws {CpfError} If the CPF is invalid (code: `INVALID_FORMAT`, `INVALID_LENGTH`, `REPEATED_DIGITS`, or `INVALID_CHECKSUM`).
+ * @returns `{ success: true, error: null }` if valid; `{ success: false, error: CpfError }` if invalid.
+ * @throws {TypeError} If the provided value is not a string or options is not a plain object.
  *
  * @example
  * ```TypeScript
- * validate("522.639.446-21"); // true
- * validate("52263944621"); // true
- * validate("688#639!!!!!!446...21"); // true
- * validate("688#639!!!!!!446...21", { strict: true }); // Throws InvalidCpfError (INVALID_FORMAT)
+ * validate("522.639.446-21"); // { success: true, error: null }
+ * validate("52263944621"); // { success: true, error: null }
+ * validate("123"); // { success: true, error: CpfError ("INVALID_LENGTH") }
+ * validate("688#639!!!!!!446...21", { strict: true }); // { success: false, error: CpfError (INVALID_FORMAT) }
  * ```
  */
-export function validate(cpf: string, options: ValidateOptions = {}): boolean {
-  if (typeof cpf !== "string") {
+export function validate(value: string, options: CpfValidateOptions = {}): CpfValidateResult {
+  if (typeof value !== "string") {
     throw new TypeError(
-      `Expected a string for CPF validate, but received ${cpf === null ? "null" : typeof cpf}`,
-    );
-  }
-
-  assertOptions(options);
-
-  const strict = options.strict ?? false;
-  const normalized = normalizeForValidation(cpf, strict);
-
-  if (normalized.length !== LENGTH) {
-    invalid(cpf, "INVALID_LENGTH", "CPF must contain exactly 11 digits.");
-  }
-
-  if (/^(\d)\1{10}$/.test(normalized)) {
-    invalid(cpf, "REPEATED_DIGITS", "CPF cannot contain all identical digits.");
-  }
-
-  const firstCheckDigit = calculateCheckDigit(normalized, [10, 9, 8, 7, 6, 5, 4, 3, 2]);
-  if (firstCheckDigit !== Number(normalized[9])) {
-    invalid(cpf, "INVALID_CHECKSUM", "Invalid CPF check digits.");
-  }
-
-  const secondCheckDigit = calculateCheckDigit(normalized, [11, 10, 9, 8, 7, 6, 5, 4, 3, 2]);
-  if (secondCheckDigit !== Number(normalized[10])) {
-    invalid(cpf, "INVALID_CHECKSUM", "Invalid CPF check digits.");
-  }
-
-  return true;
-}
-
-/**
- * Validates a CPF string without throwing errors.
- *
- * Instead of throwing, it returns a result object indicating success or failure.
- * Useful for scenarios where throwing exceptions is not desired.
- *
- * @param cpf - CPF value to validate.
- * @param options - Optional validation options.
- * @returns An object with `success: true, error: null` if valid, and `success: false, error: InvalidCpfError` if invalid.
- *
- * @example
- * ```TypeScript
- * safeValidate("522.639.446-21"); // { success: true, error: null }
- *
- * const result = safeValidate("123");
- * if (!result.success) {
- *   console.error(result.error.code); // "INVALID_LENGTH"
- * }
- * ```
- */
-export function safeValidate(
-  cpf: string,
-  options: ValidateOptions = {},
-): { success: boolean; error: CpfError | null } {
-  if (typeof cpf !== "string") {
-    throw new TypeError(
-      `Expected a string for CPF safeValidate, but received ${cpf === null ? "null" : typeof cpf}`,
+      `Expected a string for CPF validate, but received ${value === null ? "null" : typeof value}`,
     );
   }
 
   assertOptions(options);
 
   try {
-    validate(cpf, options);
+    const normalized = preNormalize(value, options.strict ?? false);
+
+    assertValid(normalized);
 
     return { success: true, error: null };
   } catch (error) {
@@ -261,7 +207,7 @@ export function safeValidate(
 
     return {
       success: false,
-      error: new CpfError(cpf, "INVALID_CHECKSUM", "Unexpected CPF validation error."),
+      error: new CpfError("UNKNOWN_ERROR", "Unexpected CPF validation error."),
     };
   }
 }
