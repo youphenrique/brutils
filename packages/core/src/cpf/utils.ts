@@ -1,5 +1,4 @@
 import type { CpfErrorCode } from "./types";
-import { LENGTH } from "./constants";
 
 export class CpfError extends Error {
   readonly code: CpfErrorCode;
@@ -32,26 +31,19 @@ export function calculateCheckDigit(digits: string, weights: number[]): number {
   return remainder < 2 ? 0 : 11 - remainder;
 }
 
-export function preNormalize(cpf: string, strict: boolean): string {
-  if (strict) {
-    const rawPattern = /^\d{11}$/;
-    const maskedPattern = /^\d{3}\.\d{3}\.\d{3}-\d{2}$/;
+export function preNormalize(cpf: string): string {
+  const rawPattern = /^\d{11}$/;
+  const maskedPattern = /^\d{3}\.\d{3}\.\d{3}-\d{2}$/;
 
-    if (rawPattern.test(cpf)) {
-      return cpf;
-    }
-
-    if (maskedPattern.test(cpf)) {
-      return cpf.replace(/\D/g, "");
-    }
-
-    throw new CpfError(
-      "INVALID_FORMAT",
-      "Strict mode only accepts 11 digits or ###.###.###-## format.",
-    );
+  if (rawPattern.test(cpf)) {
+    return cpf;
   }
 
-  return cpf.replace(/\D/g, "");
+  if (maskedPattern.test(cpf)) {
+    return cpf.replace(/\D/g, "");
+  }
+
+  throw new CpfError("INVALID_FORMAT", "Only 11 digits or ###.###.###-## format are accepted.");
 }
 
 /**
@@ -59,10 +51,6 @@ export function preNormalize(cpf: string, strict: boolean): string {
  * Used internally by cpf.validate().
  */
 export function assertValid(normalized: string): void {
-  if (normalized.length !== LENGTH) {
-    throw new CpfError("INVALID_LENGTH", "CPF must contain exactly 11 digits.");
-  }
-
   if (/^(\d)\1{10}$/.test(normalized)) {
     throw new CpfError("REPEATED_DIGITS", "CPF cannot contain all identical digits.");
   }

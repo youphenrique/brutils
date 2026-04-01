@@ -3,7 +3,6 @@ import type { CpfError } from "./utils";
 
 export type CpfErrorCode =
   | "INVALID_FORMAT"
-  | "INVALID_LENGTH"
   | "REPEATED_DIGITS"
   | "INVALID_CHECKSUM"
   | "UNKNOWN_ERROR";
@@ -11,10 +10,6 @@ export type CpfErrorCode =
 export interface CpfValidateResult {
   success: boolean;
   error: CpfError | null;
-}
-
-export interface CpfValidateOptions {
-  strict?: boolean;
 }
 
 export interface CpfFormatOptions {

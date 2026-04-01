@@ -1,12 +1,7 @@
 import { assertOptions } from "../_shared/assert-options";
 import { LENGTH, UFS_REGION_MAP } from "./constants";
 import { CpfError, randomDigit, computeCheckDigit, preNormalize, assertValid } from "./utils";
-import type {
-  CpfFormatOptions,
-  CpfGenerateOptions,
-  CpfValidateOptions,
-  CpfValidateResult,
-} from "./types";
+import type { CpfFormatOptions, CpfGenerateOptions, CpfValidateResult } from "./types";
 
 /**
  * Normalizes a CPF string by stripping any non-digit characters.
@@ -166,36 +161,34 @@ export function generate(options: CpfGenerateOptions = {}): string {
  * - Repeated digits (e.g., "111.111.111-11").
  * - Checksum digits (first and second).
  *
- * If `strict` is `true`, it only accepts:
+ * Only two input formats are accepted:
  * - Exactly 11 digits (unformatted).
  * - Standard mask `###.###.###-##` (formatted).
  *
+ * Any other format throws `CpfError("INVALID_FORMAT")`.
  * Never throws for validation errors — always returns a result object.
  *
  * @param value - CPF value to validate.
- * @param options - Optional validation options.
  * @returns `{ success: true, error: null }` if valid; `{ success: false, error: CpfError }` if invalid.
- * @throws {TypeError} If the provided value is not a string or options is not a plain object.
+ * @throws {TypeError} If the provided value is not a string.
  *
  * @example
  * ```TypeScript
  * validate("522.639.446-21"); // { success: true, error: null }
  * validate("52263944621"); // { success: true, error: null }
- * validate("123"); // { success: true, error: CpfError ("INVALID_LENGTH") }
- * validate("688#639!!!!!!446...21", { strict: true }); // { success: false, error: CpfError (INVALID_FORMAT) }
+ * validate("123"); // { success: false, error: CpfError ("INVALID_FORMAT") }
+ * validate("688#639!!!!!!446...21"); // { success: false, error: CpfError (INVALID_FORMAT) }
  * ```
  */
-export function validate(value: string, options: CpfValidateOptions = {}): CpfValidateResult {
+export function validate(value: string): CpfValidateResult {
   if (typeof value !== "string") {
     throw new TypeError(
       `Expected a string for CPF validate, but received ${value === null ? "null" : typeof value}`,
     );
   }
 
-  assertOptions(options);
-
   try {
-    const normalized = preNormalize(value, options.strict ?? false);
+    const normalized = preNormalize(value);
 
     assertValid(normalized);
 
