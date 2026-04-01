@@ -1,6 +1,6 @@
 export const LENGTH = 11;
 
-export const STATES_REGION_MAP = {
+export const UFS_REGION_MAP = {
   DF: 1,
   GO: 1,
   MS: 1,

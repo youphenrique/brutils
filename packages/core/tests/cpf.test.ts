@@ -233,14 +233,14 @@ describe("cpf.generate", () => {
 
   it("forces 9th digit to 8 for SP", () => {
     for (let i = 0; i < 100; i += 1) {
-      expect(cpf.generate({ state: "SP" })[8]).toBe("8");
+      expect(cpf.generate({ uf: "SP" })[8]).toBe("8");
     }
   });
 
   it("forces 9th digit to 1 for GO and DF", () => {
     for (let i = 0; i < 100; i += 1) {
-      expect(cpf.generate({ state: "GO" })[8]).toBe("1");
-      expect(cpf.generate({ state: "DF" })[8]).toBe("1");
+      expect(cpf.generate({ uf: "GO" })[8]).toBe("1");
+      expect(cpf.generate({ uf: "DF" })[8]).toBe("1");
     }
   });
 
@@ -259,7 +259,7 @@ describe("cpf.generate", () => {
       .mockReturnValueOnce(0.6)
       .mockReturnValueOnce(0.3);
 
-    const generated = cpf.generate({ state: "AC" });
+    const generated = cpf.generate({ uf: "AC" });
 
     expect(generated[8]).toBe("2");
 

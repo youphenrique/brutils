@@ -1,5 +1,5 @@
 import { assertOptions } from "../_shared/assert-options";
-import { LENGTH, STATES_REGION_MAP } from "./constants";
+import { LENGTH, UFS_REGION_MAP } from "./constants";
 import { CpfError, randomDigit, computeCheckDigit, preNormalize, assertValid } from "./utils";
 import type {
   CpfFormatOptions,
@@ -133,10 +133,10 @@ export function format(value: string, options: CpfFormatOptions = {}): string {
 export function generate(options: CpfGenerateOptions = {}): string {
   assertOptions(options);
 
-  const { state, formatted = false } = options;
+  const { uf, formatted = false } = options;
 
   const baseDigits = Array.from({ length: 8 }, randomDigit);
-  baseDigits.push(state ? STATES_REGION_MAP[state] : randomDigit());
+  baseDigits.push(uf !== undefined ? UFS_REGION_MAP[uf] : randomDigit());
 
   if (baseDigits.every((digit) => digit === baseDigits[0])) {
     const rerollIndex = Math.floor(Math.random() * 8);
