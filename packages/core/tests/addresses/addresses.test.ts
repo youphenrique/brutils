@@ -22,20 +22,24 @@ describe("addresses.getByCep", () => {
   });
 
   it("fallback succeeds on first provider", async () => {
-    globalThis.fetch = vi.fn(async () =>
-      new Response(
-        JSON.stringify({
-          cep: "01310-100",
-          logradouro: "Avenida Paulista",
-          bairro: "Bela Vista",
-          localidade: "São Paulo",
-          uf: "SP",
-        }),
-        { status: 200 },
-      ),
+    globalThis.fetch = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({
+            cep: "01310-100",
+            logradouro: "Avenida Paulista",
+            bairro: "Bela Vista",
+            localidade: "São Paulo",
+            uf: "SP",
+          }),
+          { status: 200 },
+        ),
     ) as typeof fetch;
 
-    const result = await addresses.getByCep("01310-100", { strategy: "fallback", providers: ["viacep"] });
+    const result = await addresses.getByCep("01310-100", {
+      strategy: "fallback",
+      providers: ["viacep"],
+    });
     expect(result.provider).toBe("viacep");
     expect(result.cep).toBe("01310100");
   });
@@ -62,8 +66,12 @@ describe("addresses.getByCep", () => {
   });
 
   it("fallback returns not-found when provider indicates not-found", async () => {
-    globalThis.fetch = vi.fn(async () => new Response(JSON.stringify({ erro: true }), { status: 200 })) as typeof fetch;
-    await expect(addresses.getByCep("00000000", { providers: ["viacep"] })).rejects.toBeInstanceOf(addresses.CepNotFoundError);
+    globalThis.fetch = vi.fn(
+      async () => new Response(JSON.stringify({ erro: true }), { status: 200 }),
+    ) as typeof fetch;
+    await expect(addresses.getByCep("00000000", { providers: ["viacep"] })).rejects.toBeInstanceOf(
+      addresses.CepNotFoundError,
+    );
   });
 
   it("fallback throws provider error when all providers fail", async () => {
@@ -72,9 +80,9 @@ describe("addresses.getByCep", () => {
       .mockResolvedValueOnce(new Response(null, { status: 500 }))
       .mockRejectedValueOnce(new Error("network")) as typeof fetch;
 
-    await expect(addresses.getByCep("01310100", { providers: ["viacep", "brasilapi"] })).rejects.toBeInstanceOf(
-      addresses.CepProviderError,
-    );
+    await expect(
+      addresses.getByCep("01310100", { providers: ["viacep", "brasilapi"] }),
+    ).rejects.toBeInstanceOf(addresses.CepProviderError);
   });
 
   it("race returns first successful response", async () => {
@@ -82,10 +90,29 @@ describe("addresses.getByCep", () => {
       .fn()
       .mockImplementationOnce(async () => {
         await new Promise((resolve) => setTimeout(resolve, 20));
-        return new Response(JSON.stringify({ cep: "01310-100", logradouro: "X", bairro: "Y", localidade: "Z", uf: "SP" }), { status: 200 });
+        return new Response(
+          JSON.stringify({
+            cep: "01310-100",
+            logradouro: "X",
+            bairro: "Y",
+            localidade: "Z",
+            uf: "SP",
+          }),
+          { status: 200 },
+        );
       })
-      .mockImplementationOnce(async () =>
-        new Response(JSON.stringify({ cep: "01310-100", street: "A", neighborhood: "B", city: "C", state: "SP" }), { status: 200 }),
+      .mockImplementationOnce(
+        async () =>
+          new Response(
+            JSON.stringify({
+              cep: "01310-100",
+              street: "A",
+              neighborhood: "B",
+              city: "C",
+              state: "SP",
+            }),
+            { status: 200 },
+          ),
       ) as typeof fetch;
 
     const result = await addresses.getByCep("01310100", {
@@ -111,8 +138,18 @@ describe("addresses.getByCep", () => {
   });
 
   it("cache hit skips providers", async () => {
-    const fetchSpy = vi.fn(async () =>
-      new Response(JSON.stringify({ cep: "01310-100", logradouro: "A", bairro: "B", localidade: "C", uf: "SP" }), { status: 200 }),
+    const fetchSpy = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({
+            cep: "01310-100",
+            logradouro: "A",
+            bairro: "B",
+            localidade: "C",
+            uf: "SP",
+          }),
+          { status: 200 },
+        ),
     );
     globalThis.fetch = fetchSpy as unknown as typeof fetch;
 
@@ -123,8 +160,18 @@ describe("addresses.getByCep", () => {
   });
 
   it("disabled cache always calls providers", async () => {
-    const fetchSpy = vi.fn(async () =>
-      new Response(JSON.stringify({ cep: "01310-100", logradouro: "A", bairro: "B", localidade: "C", uf: "SP" }), { status: 200 }),
+    const fetchSpy = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({
+            cep: "01310-100",
+            logradouro: "A",
+            bairro: "B",
+            localidade: "C",
+            uf: "SP",
+          }),
+          { status: 200 },
+        ),
     );
     globalThis.fetch = fetchSpy as unknown as typeof fetch;
 
@@ -138,14 +185,16 @@ describe("addresses.getByCep", () => {
     globalThis.fetch = vi.fn(async (_input, init) => {
       const signal = init?.signal as AbortSignal;
       await new Promise((resolve, reject) => {
-        signal.addEventListener("abort", () => reject(Object.assign(new Error("aborted"), { name: "AbortError" })));
+        signal.addEventListener("abort", () =>
+          reject(Object.assign(new Error("aborted"), { name: "AbortError" })),
+        );
         setTimeout(resolve, 50);
       });
       return new Response(null, { status: 200 });
     }) as typeof fetch;
 
-    await expect(addresses.getByCep("01310100", { providers: ["viacep"], timeout: 10 })).rejects.toBeInstanceOf(
-      addresses.CepProviderError,
-    );
+    await expect(
+      addresses.getByCep("01310100", { providers: ["viacep"], timeout: 10 }),
+    ).rejects.toBeInstanceOf(addresses.CepProviderError);
   });
 });

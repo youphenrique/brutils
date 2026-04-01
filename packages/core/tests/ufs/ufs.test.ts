@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
 
-import { ufs } from "../src/index.ts";
+import { ufs } from "../../src/index.ts";
 
 describe("ufs.list", () => {
   it("returns all 27 UFs when no args are provided", () => {
@@ -37,33 +37,25 @@ describe("ufs.list", () => {
   });
 
   it("throws Error for invalid region", () => {
-    expect(() => ufs.list({ region: "XX" })).toThrowError(/Invalid region/);
+    expect(() => ufs.list({ region: "XX" } as any)).toThrow(/Invalid region/);
   });
 
   it("throws Error for invalid sortBy", () => {
-    // @ts-expect-error Testing invalid runtime value
-    expect(() => ufs.list({ sortBy: "invalid" })).toThrowError(/Invalid sortBy/);
+    expect(() => ufs.list({ sortBy: "invalid" } as any)).toThrow(/Invalid sortBy/);
   });
 
   it("throws TypeError for invalid non-object options", () => {
     expect(ufs.list(undefined)).toHaveLength(27);
-    // @ts-expect-error Testing invalid runtime value
-    expect(() => ufs.list("SP")).toThrowError(TypeError);
-    // @ts-expect-error Testing invalid runtime value
-    expect(() => ufs.list(null)).toThrowError(TypeError);
-    // @ts-expect-error Testing invalid runtime value
-    expect(() => ufs.list(123)).toThrowError(TypeError);
-    // @ts-expect-error Testing invalid runtime value
-    expect(() => ufs.list(true)).toThrowError(TypeError);
-    // @ts-expect-error Testing invalid runtime value
-    expect(() => ufs.list([])).toThrowError(TypeError);
+    expect(() => ufs.list("SP" as any)).toThrow(TypeError);
+    expect(() => ufs.list(null as any)).toThrow(TypeError);
+    expect(() => ufs.list(123 as any)).toThrow(TypeError);
+    expect(() => ufs.list(true as any)).toThrow(TypeError);
+    expect(() => ufs.list([] as any)).toThrow(TypeError);
   });
 
   it("throws Error for invalid sortBy value", () => {
-    // @ts-expect-error Testing invalid runtime value
-    expect(() => ufs.list({ sortBy: "invalid" })).toThrowError(/Invalid sortBy/);
-    // @ts-expect-error Testing invalid runtime value
-    expect(() => ufs.list({ sortBy: 123 })).toThrowError(/Invalid sortBy/);
+    expect(() => ufs.list({ sortBy: "invalid" } as any)).toThrow(/Invalid sortBy/);
+    expect(() => ufs.list({ sortBy: 123 } as any)).toThrow(/Invalid sortBy/);
   });
 });
 
@@ -88,14 +80,10 @@ describe("list.getByCode", () => {
   });
 
   it("throws TypeError for invalid non-string input", () => {
-    // @ts-expect-error Testing invalid runtime value
-    expect(() => ufs.getByCode(null)).toThrowError(TypeError);
-    // @ts-expect-error Testing invalid runtime value
-    expect(() => ufs.getByCode(undefined)).toThrowError(TypeError);
-    // @ts-expect-error Testing invalid runtime value
-    expect(() => ufs.getByCode(123)).toThrowError(TypeError);
-    // @ts-expect-error Testing invalid runtime value
-    expect(() => ufs.getByCode({})).toThrowError(TypeError);
+    expect(() => ufs.getByCode(null as any)).toThrow(TypeError);
+    expect(() => ufs.getByCode(undefined as any)).toThrow(TypeError);
+    expect(() => ufs.getByCode(123 as any)).toThrow(TypeError);
+    expect(() => ufs.getByCode({} as any)).toThrow(TypeError);
   });
 });
 
@@ -129,13 +117,9 @@ describe("list.getByName", () => {
   });
 
   it("throws TypeError for invalid non-string input", () => {
-    // @ts-expect-error Testing invalid runtime value
-    expect(() => ufs.getByName(null)).toThrowError(TypeError);
-    // @ts-expect-error Testing invalid runtime value
-    expect(() => ufs.getByName(undefined)).toThrowError(TypeError);
-    // @ts-expect-error Testing invalid runtime value
-    expect(() => ufs.getByName(123)).toThrowError(TypeError);
-    // @ts-expect-error Testing invalid runtime value
-    expect(() => ufs.getByName({})).toThrowError(TypeError);
+    expect(() => ufs.getByName(null as any)).toThrow(TypeError);
+    expect(() => ufs.getByName(undefined as any)).toThrow(TypeError);
+    expect(() => ufs.getByName(123 as any)).toThrow(TypeError);
+    expect(() => ufs.getByName({} as any)).toThrow(TypeError);
   });
 });

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vite-plus/test";
 
-import { cpf } from "../src/index.ts";
-import { CpfError } from "../src/cpf/index.ts";
+import { cpf } from "../../src/index.ts";
+import { CpfError } from "../../src/cpf/index.ts";
 
 describe("cpf.normalize", () => {
   it("strips non-digit characters from a formatted CPF", () => {
