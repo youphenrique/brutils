@@ -15,9 +15,11 @@ afterEach(() => {
 describe("addresses.getByCep", () => {
   it("throws validation error before provider call", async () => {
     const fetchSpy = vi.fn();
+
     globalThis.fetch = fetchSpy as unknown as typeof fetch;
 
     await expect(addresses.getByCep("123")).rejects.toBeInstanceOf(addresses.CepValidationError);
+
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
@@ -62,6 +64,7 @@ describe("addresses.getByCep", () => {
       ) as typeof fetch;
 
     const result = await addresses.getByCep("01310100", { providers: ["viacep", "brasilapi"] });
+
     expect(result.provider).toBe("brasilapi");
   });
 
@@ -69,6 +72,7 @@ describe("addresses.getByCep", () => {
     globalThis.fetch = vi.fn(
       async () => new Response(JSON.stringify({ erro: true }), { status: 200 }),
     ) as typeof fetch;
+
     await expect(addresses.getByCep("00000000", { providers: ["viacep"] })).rejects.toBeInstanceOf(
       addresses.CepNotFoundError,
     );
@@ -151,6 +155,7 @@ describe("addresses.getByCep", () => {
           { status: 200 },
         ),
     );
+
     globalThis.fetch = fetchSpy as unknown as typeof fetch;
 
     await addresses.getByCep("01310100", { providers: ["viacep"], cache: true });
@@ -173,6 +178,7 @@ describe("addresses.getByCep", () => {
           { status: 200 },
         ),
     );
+
     globalThis.fetch = fetchSpy as unknown as typeof fetch;
 
     await addresses.getByCep("01310100", { providers: ["viacep"], cache: false });
@@ -184,12 +190,14 @@ describe("addresses.getByCep", () => {
   it("respects timeout per provider", async () => {
     globalThis.fetch = vi.fn(async (_input, init) => {
       const signal = init?.signal as AbortSignal;
+
       await new Promise((resolve, reject) => {
         signal.addEventListener("abort", () =>
           reject(Object.assign(new Error("aborted"), { name: "AbortError" })),
         );
         setTimeout(resolve, 50);
       });
+
       return new Response(null, { status: 200 });
     }) as typeof fetch;
 

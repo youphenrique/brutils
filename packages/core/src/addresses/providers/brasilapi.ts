@@ -1,4 +1,10 @@
-import { ProviderNotFoundSignal, ProviderRequestError, throttleProvider, fetchJsonWithTimeout, normalizeCep } from "../utils";
+import {
+  ProviderNotFoundSignal,
+  ProviderRequestError,
+  throttleProvider,
+  fetchWithTimeout,
+  normalizeCep,
+} from "../utils";
 import type { CepProvider } from "./types";
 
 type BrasilApiResponse = {
@@ -19,9 +25,12 @@ export const brasilapiProvider: CepProvider = {
 
     let response: Response;
     try {
-      response = await fetchJsonWithTimeout(`https://brasilapi.com.br/api/cep/v1/${cep}`, timeout);
+      response = await fetchWithTimeout(`https://brasilapi.com.br/api/cep/v1/${cep}`, timeout);
     } catch (error) {
-      throw new ProviderRequestError("brasilapi", error instanceof Error ? error.message : "Unknown error");
+      throw new ProviderRequestError(
+        "brasilapi",
+        error instanceof Error ? error.message : "Unknown error",
+      );
     }
 
     if (response.status === 404) {

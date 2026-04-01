@@ -1,4 +1,10 @@
-import { fetchJsonWithTimeout, normalizeCep, ProviderNotFoundSignal, ProviderRequestError, throttleProvider } from "../utils";
+import {
+  fetchWithTimeout,
+  normalizeCep,
+  ProviderNotFoundSignal,
+  ProviderRequestError,
+  throttleProvider,
+} from "../utils";
 import type { CepProvider } from "./types";
 
 type ViaCepResponse = {
@@ -20,9 +26,12 @@ export const viacepProvider: CepProvider = {
 
     let response: Response;
     try {
-      response = await fetchJsonWithTimeout(`https://viacep.com.br/ws/${cep}/json/`, timeout);
+      response = await fetchWithTimeout(`https://viacep.com.br/ws/${cep}/json/`, timeout);
     } catch (error) {
-      throw new ProviderRequestError("viacep", error instanceof Error ? error.message : "Unknown error");
+      throw new ProviderRequestError(
+        "viacep",
+        error instanceof Error ? error.message : "Unknown error",
+      );
     }
 
     if (response.status === 404) {

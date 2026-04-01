@@ -11,7 +11,11 @@ import {
   validateCep,
 } from "./utils";
 
-async function runFallback(cep: string, providers: ProviderName[], timeout: number): Promise<AddressResponse> {
+async function runFallback(
+  cep: string,
+  providers: ProviderName[],
+  timeout: number,
+): Promise<AddressResponse> {
   const failures: Array<{ provider: string; reason: string }> = [];
 
   for (const providerName of providers) {
@@ -29,14 +33,21 @@ async function runFallback(cep: string, providers: ProviderName[], timeout: numb
         continue;
       }
 
-      failures.push({ provider: providerName, reason: error instanceof Error ? error.message : "Unknown error" });
+      failures.push({
+        provider: providerName,
+        reason: error instanceof Error ? error.message : "Unknown error",
+      });
     }
   }
 
   throw new CepProviderError(cep, failures);
 }
 
-async function runRace(cep: string, providers: ProviderName[], timeout: number): Promise<AddressResponse> {
+async function runRace(
+  cep: string,
+  providers: ProviderName[],
+  timeout: number,
+): Promise<AddressResponse> {
   const tasks = providers.map(async (providerName) => {
     const provider = providerRegistry[providerName];
 
@@ -51,7 +62,10 @@ async function runRace(cep: string, providers: ProviderName[], timeout: number):
         throw error;
       }
 
-      throw new ProviderRequestError(providerName, error instanceof Error ? error.message : "Unknown error");
+      throw new ProviderRequestError(
+        providerName,
+        error instanceof Error ? error.message : "Unknown error",
+      );
     }
   });
 
@@ -59,6 +73,7 @@ async function runRace(cep: string, providers: ProviderName[], timeout: number):
     return await Promise.any(tasks);
   } catch {
     const settled = await Promise.allSettled(tasks);
+
     const hasNotFound = settled.some(
       (result) => result.status === "rejected" && result.reason instanceof CepNotFoundError,
     );
@@ -96,7 +111,10 @@ async function runRace(cep: string, providers: ProviderName[], timeout: number):
  * @throws {CepNotFoundError} If CEP is not found by tried providers.
  * @throws {CepProviderError} If all tried providers fail with provider/network errors.
  */
-export async function getByCep(cep: string, options: GetByCepOptions = {}): Promise<AddressResponse> {
+export async function getByCep(
+  cep: string,
+  options: GetByCepOptions = {},
+): Promise<AddressResponse> {
   const normalizedCep = normalizeCep(cep);
   validateCep(normalizedCep);
 

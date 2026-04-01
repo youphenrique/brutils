@@ -186,6 +186,7 @@ export async function throttleProvider(provider: ProviderName): Promise<void> {
 
 export function resetThrottler(): void {
   Object.values(throttlers).forEach((bucket) => bucket.stop());
+
   throttlers = {
     viacep: new TokenBucket(PROVIDER_THROTTLE.viacep.rps),
     widenet: new TokenBucket(PROVIDER_THROTTLE.widenet.rps),
@@ -193,7 +194,7 @@ export function resetThrottler(): void {
   };
 }
 
-export async function fetchJsonWithTimeout(url: string, timeout: number): Promise<Response> {
+export async function fetchWithTimeout(url: string, timeout: number): Promise<Response> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeout);
 
@@ -203,6 +204,7 @@ export async function fetchJsonWithTimeout(url: string, timeout: number): Promis
     if (error instanceof Error && error.name === "AbortError") {
       throw new Error(`Request timeout after ${timeout}ms`);
     }
+
     throw error;
   } finally {
     clearTimeout(timer);
