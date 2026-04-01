@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vite-plus/test";
 
-import { cnpj } from "../src/index.ts";
-import { CnpjError } from "../src/cnpj/index.ts";
+import { cnpj } from "../../src/index.ts";
+import { CnpjError } from "../../src/cnpj/index.ts";
 
 // ─── cnpj.normalize ──────────────────────────────────────────────────────────
 
