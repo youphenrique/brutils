@@ -95,97 +95,85 @@ describe("cnpj.format", () => {
 
 describe("cnpj.validate", () => {
   // Numeric CNPJ
-  it("accepts a valid formatted numeric CNPJ", () => {
-    expect(cnpj.validate("73.450.392/0001-64")).toEqual({ success: true, error: null });
-  });
-
-  it("accepts a valid unformatted numeric CNPJ", () => {
-    expect(cnpj.validate("73450392000164")).toEqual({ success: true, error: null });
-  });
-
   it("rejects all-same-character CNPJ", () => {
-    expect(cnpj.validate("00000000000000").success).toBe(false);
-    expect(cnpj.validate("11111111111111").success).toBe(false);
+    let result = cnpj.validate("00000000000000");
+    expect(result.success).toBe(false);
+    expect(result.error?.code).toBe("REPEATED_DIGITS");
+
+    result = cnpj.validate("55.555.555/5555-55");
+    expect(result.success).toBe(false);
+    expect(result.error?.code).toBe("REPEATED_DIGITS");
+
+    result = cnpj.validate("99999999999999");
+    expect(result.success).toBe(false);
+    expect(result.error?.code).toBe("REPEATED_DIGITS");
   });
 
-  it("rejects a CNPJ with wrong check digits", () => {
-    expect(cnpj.validate("73450392000100").success).toBe(false);
+  it("rejects CNPJ with partially or totally incorrect check digits", () => {
+    let result = cnpj.validate("12.ABC.345/01DE-30");
+    expect(result.success).toBe(false);
+    expect(result.error?.code).toBe("INVALID_CHECKSUM");
+
+    result = cnpj.validate("12.ABC.345/01DE-05");
+    expect(result.success).toBe(false);
+    expect(result.error?.code).toBe("INVALID_CHECKSUM");
+
+    result = cnpj.validate("73450392000100");
+    expect(result.success).toBe(false);
+    expect(result.error?.code).toBe("INVALID_CHECKSUM");
   });
 
-  // Alphanumeric CNPJ
-  it("accepts the official SERPRO alphanumeric example", () => {
-    expect(cnpj.validate("12.ABC.345/01DE-35")).toEqual({ success: true, error: null });
-  });
-
-  it("rejects the example with incorrect check digits", () => {
-    expect(cnpj.validate("12.ABC.345/01DE-99").success).toBe(false);
-    expect(cnpj.validate("12.ABC.345/01DE-00").success).toBe(false);
-  });
-
-  it("rejects check digits that are only partially correct", () => {
-    expect(cnpj.validate("12.ABC.345/01DE-30").success).toBe(false);
-    expect(cnpj.validate("12.ABC.345/01DE-05").success).toBe(false);
-  });
-
-  it("accepts alphanumeric CNPJ with spaces stripped", () => {
-    expect(cnpj.validate("12ABC3450 1DE35").success).toBe(true);
-  });
-
-  it("rejects alphanumeric CNPJ with wrong check digits", () => {
-    expect(cnpj.validate("12ABC3450 1DE99").success).toBe(false);
+  it("rejects alphanumeric CNPJ with spaces (invalid format)", () => {
+    const result = cnpj.validate("12 ABC3450 1DE35");
+    expect(result.success).toBe(false);
+    expect(result.error?.code).toBe("INVALID_FORMAT");
   });
 
   it("accepts lowercase input by uppercasing internally", () => {
     expect(cnpj.validate("12.abc.345/01de-35").success).toBe(true);
+    expect(cnpj.validate("pb1s7s46000114").success).toBe(true);
   });
 
   it("rejects CNPJ with invalid length", () => {
-    expect(cnpj.validate("1234").success).toBe(false);
-    expect(cnpj.validate("").success).toBe(false);
+    let result = cnpj.validate("AB1C2D3E");
+    expect(result.success).toBe(false);
+    expect(result.error?.code).toBe("INVALID_FORMAT");
+
+    result = cnpj.validate("GE.YP8.K1W/000");
+    expect(result.success).toBe(false);
+    expect(result.error?.code).toBe("INVALID_FORMAT");
+
+    result = cnpj.validate("");
+    expect(result.success).toBe(false);
+    expect(result.error?.code).toBe("INVALID_FORMAT");
+
+    result = cnpj.validate("AB.1C2.D3E/4F5G-356");
+    expect(result.success).toBe(false);
+    expect(result.error?.code).toBe("INVALID_FORMAT");
   });
 
-  // Strict mode
-  it("strict: accepts valid unformatted CNPJ", () => {
-    expect(cnpj.validate("73450392000164", { strict: true })).toEqual({
-      success: true,
-      error: null,
-    });
+  it("accepts valid unformatted CNPJ", () => {
+    expect(cnpj.validate("73450392000164")).toEqual({ success: true, error: null });
+    expect(cnpj.validate("GEYP8K1W000177")).toEqual({ success: true, error: null });
   });
 
-  it("strict: accepts valid formatted CNPJ", () => {
-    expect(cnpj.validate("73.450.392/0001-64", { strict: true })).toEqual({
-      success: true,
-      error: null,
-    });
+  it("accepts valid formatted CNPJ", () => {
+    expect(cnpj.validate("73.450.392/0001-64")).toEqual({ success: true, error: null });
+    expect(cnpj.validate("BT.HYV.1XM/0001-55")).toEqual({ success: true, error: null });
+    // The official SERPRO alphanumeric example
+    expect(cnpj.validate("12.ABC.345/01DE-35")).toEqual({ success: true, error: null });
   });
 
-  it("strict: returns failure with INVALID_FORMAT for characters outside [A-Za-z0-9./-]", () => {
-    const result = cnpj.validate("73$450392000164", { strict: true });
+  it("returns failure with INVALID_FORMAT for characters outside [A-Za-z0-9./-]", () => {
+    let result = cnpj.validate("73$450392000164");
     expect(result.success).toBe(false);
     expect(result.error).toBeInstanceOf(CnpjError);
     expect(result.error?.code).toBe("INVALID_FORMAT");
-  });
 
-  it("strict: returns failure with INVALID_FORMAT for short input", () => {
-    const result = cnpj.validate("1234", { strict: true });
+    result = cnpj.validate("BT%HYV&1XM@0001,55");
     expect(result.success).toBe(false);
+    expect(result.error).toBeInstanceOf(CnpjError);
     expect(result.error?.code).toBe("INVALID_FORMAT");
-  });
-
-  it("strict: returns failure with INVALID_CHECK_DIGITS for wrong DVs", () => {
-    const result = cnpj.validate("73450392000100", { strict: true });
-    expect(result.success).toBe(false);
-    expect(result.error?.code).toBe("INVALID_CHECK_DIGITS");
-  });
-
-  it("strict: returns failure with INVALID_FORMAT for spaces in input", () => {
-    const result = cnpj.validate("12ABC3450 1DE35", { strict: true });
-    expect(result.success).toBe(false);
-    expect(result.error?.code).toBe("INVALID_FORMAT");
-  });
-
-  it("accepts undefined options and uses defaults", () => {
-    expect(cnpj.validate("73450392000164", undefined)).toEqual({ success: true, error: null });
   });
 
   it("throws TypeError for non-string input", () => {
@@ -193,12 +181,6 @@ describe("cnpj.validate", () => {
     expect(() => cnpj.validate(undefined as unknown as string)).toThrow(TypeError);
     expect(() => cnpj.validate(73450392000164 as unknown as string)).toThrow(TypeError);
     expect(() => cnpj.validate({} as unknown as string)).toThrow(TypeError);
-  });
-
-  it("throws TypeError for invalid options type", () => {
-    expect(() => cnpj.validate("73450392000164", null as unknown as object)).toThrow(TypeError);
-    expect(() => cnpj.validate("73450392000164", 123 as unknown as object)).toThrow(TypeError);
-    expect(() => cnpj.validate("73450392000164", [] as unknown as object)).toThrow(TypeError);
   });
 });
 
@@ -212,13 +194,13 @@ describe("CnpjError", () => {
   });
 
   it("has name CnpjError", () => {
-    const err = new CnpjError("INVALID_LENGTH");
+    const err = new CnpjError("INVALID_FORMAT");
     expect(err.name).toBe("CnpjError");
   });
 
   it("stores the error code", () => {
-    const err = new CnpjError("INVALID_CHECK_DIGITS");
-    expect(err.code).toBe("INVALID_CHECK_DIGITS");
+    const err = new CnpjError("INVALID_CHECKSUM");
+    expect(err.code).toBe("INVALID_CHECKSUM");
   });
 
   it("uses code as default message when no message is provided", () => {
@@ -227,7 +209,7 @@ describe("CnpjError", () => {
   });
 
   it("uses custom message when provided", () => {
-    const err = new CnpjError("INVALID_LENGTH", "Custom message");
+    const err = new CnpjError("INVALID_CHECKSUM", "Custom message");
     expect(err.message).toBe("Custom message");
   });
 });
@@ -296,7 +278,3 @@ describe("cnpj.generate", () => {
     expect(() => cnpj.generate([] as unknown as object)).toThrow(TypeError);
   });
 });
-
-// ─── Algorithm correctness (SERPRO official example) ─────────────────────────
-
-describe("CNPJ DV algorithm — official SERPRO example", () => {});

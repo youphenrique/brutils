@@ -1,4 +1,4 @@
-import { BASE_LENGTH, LENGTH } from "./constants";
+import { BASE_LENGTH } from "./constants";
 import type { CnpjErrorCode } from "./types";
 
 // ─── Error class ─────────────────────────────────────────────────────────────
@@ -54,63 +54,49 @@ export function calcCheckDigits(base12: string): string {
 }
 
 /**
- * Strips all non-alphanumeric characters and uppercases.
+ * Strips all non-alphanumeric characters and uppercases if the input is masked,
+ * or returns the raw input if it's already in the raw format.
  *
- * In strict mode, only two input formats are accepted:
+ * Only two input formats are accepted:
  * - Raw: exactly 12 alphanumeric characters followed by 2 digits (e.g., `"73450392000164"`).
  * - Masked: standard CNPJ punctuation (`XX.XXX.XXX/XXXX-XX`) where the last
  *   two characters must be digits (e.g., `"73.450.392/0001-64"`).
  *
  * Any other format throws `CnpjError("INVALID_FORMAT")`.
- *
- * In non-strict mode, strips all non-alphanumeric characters and uppercases
- * without validation. Never throws.
  */
-export function preNormalize(value: string, strict: boolean): string {
-  if (strict) {
-    const rawPattern = /^[A-Za-z0-9]{12}[0-9]{2}$/;
-    const maskedPattern =
-      /^[A-Za-z0-9]{2}\.[A-Za-z0-9]{3}\.[A-Za-z0-9]{3}\/[A-Za-z0-9]{4}-[0-9]{2}$/;
+export function preNormalize(value: string): string {
+  const rawPattern = /^[A-Za-z0-9]{12}[0-9]{2}$/;
+  const maskedPattern = /^[A-Za-z0-9]{2}\.[A-Za-z0-9]{3}\.[A-Za-z0-9]{3}\/[A-Za-z0-9]{4}-[0-9]{2}$/;
 
-    if (rawPattern.test(value)) {
-      return value;
-    }
-
-    if (maskedPattern.test(value)) {
-      return value.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
-    }
-
-    throw new CnpjError(
-      "INVALID_FORMAT",
-      "Strict mode only accepts 12 alphanumeric chars plus 2 digits or ###.###.###/####-## format.",
-    );
+  if (rawPattern.test(value)) {
+    return value.toUpperCase();
   }
 
-  return value.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+  if (maskedPattern.test(value)) {
+    return value.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+  }
+
+  throw new CnpjError(
+    "INVALID_FORMAT",
+    "Only 12 alphanumeric chars plus 2 digits or ##.###.###/####-## format are accepted.",
+  );
 }
 
 /**
  * Core validator — always throws CnpjError on failure, never returns false.
  * Used internally by cnpj.validate().
  */
-export function assertValid(cleaned: string): void {
-  if (cleaned.length !== LENGTH) {
-    throw new CnpjError(
-      "INVALID_LENGTH",
-      `CNPJ must be exactly ${LENGTH} characters after removing punctuation.`,
-    );
-  }
-
+export function assertValid(normalized: string): void {
   // Reject all-same-character CNPJs (e.g. "00000000000000")
-  if (/^(.)\1{13}$/.test(cleaned)) {
-    throw new CnpjError("INVALID_CHECK_DIGITS", "CNPJ cannot consist of all identical characters.");
+  if (/^(.)\1{13}$/.test(normalized)) {
+    throw new CnpjError("REPEATED_DIGITS", "CNPJ cannot consist of all identical characters.");
   }
 
-  const base12 = cleaned.slice(0, BASE_LENGTH);
+  const base12 = normalized.slice(0, BASE_LENGTH);
   const expectedDV = calcCheckDigits(base12);
-  const actualDV = cleaned.slice(BASE_LENGTH);
+  const actualDV = normalized.slice(BASE_LENGTH);
 
   if (expectedDV !== actualDV) {
-    throw new CnpjError("INVALID_CHECK_DIGITS", "Invalid CNPJ check digits.");
+    throw new CnpjError("INVALID_CHECKSUM", "Invalid CNPJ check digits.");
   }
 }

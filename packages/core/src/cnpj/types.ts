@@ -1,14 +1,10 @@
 import { CnpjError } from "./utils";
 
 export type CnpjErrorCode =
+  | "REPEATED_DIGITS"
   | "INVALID_FORMAT"
-  | "INVALID_LENGTH"
-  | "INVALID_CHECK_DIGITS"
+  | "INVALID_CHECKSUM"
   | "UNKNOWN_ERROR";
-
-export type CnpjValidateOptions = {
-  strict?: boolean;
-};
 
 export type CnpjFormatOptions = {
   pad?: boolean;

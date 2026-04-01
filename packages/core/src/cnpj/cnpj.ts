@@ -1,12 +1,7 @@
 import { assertOptions } from "../_shared/assert-options";
 import { ALPHANUMERIC_CHARS, DIGIT_CHARS, LENGTH } from "./constants";
 import { assertValid, calcCheckDigits, preNormalize, CnpjError } from "./utils";
-import type {
-  CnpjFormatOptions,
-  CnpjGenerateOptions,
-  CnpjValidateResult,
-  CnpjValidateOptions,
-} from "./types";
+import type { CnpjFormatOptions, CnpjGenerateOptions, CnpjValidateResult } from "./types";
 
 function randomFrom(chars: string): string {
   return chars[Math.floor(Math.random() * chars.length)];
@@ -33,7 +28,7 @@ export function normalize(value: string): string {
     );
   }
 
-  return preNormalize(value, false);
+  return value.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
 }
 
 /**
@@ -65,7 +60,7 @@ export function format(value: string, options: CnpjFormatOptions = {}): string {
 
   assertOptions(options);
 
-  const preNormalized = preNormalize(value, false);
+  const preNormalized = value.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
   const normalized = options.pad ? preNormalized.padStart(LENGTH, "0") : preNormalized;
 
   if (normalized.length !== LENGTH) {
@@ -134,7 +129,7 @@ export function generate(options: CnpjGenerateOptions = {}): string {
  * - All-same-character rejection
  * - Correct check digits
  *
- * In strict mode, only two input formats are accepted:
+ * Only two input formats are accepted:
  * - Raw: exactly 12 alphanumeric characters followed by 2 digits (e.g., `"73450392000164"`).
  * - Masked: standard CNPJ punctuation (`XX.XXX.XXX/XXXX-XX`) where the last
  *   two characters must be digits (e.g., `"73.450.392/0001-64"`).
@@ -143,28 +138,25 @@ export function generate(options: CnpjGenerateOptions = {}): string {
  * Never throws for validation errors — always returns a result object.
  *
  * @param value - CNPJ value to validate.
- * @param options - Optional validation options.
  * @returns `{ success: true, error: null }` if valid; `{ success: false, error: CnpjError }` if invalid.
- * @throws {TypeError} If `value` is not a string or options is not a plain object.
+ * @throws {TypeError} If `value` is not a string.
  *
  * @example
  * ```TypeScript
  * validate("73.450.392/0001-64"); // { success: true, error: null }
- * validate("12ABC34501DE99"); // { success: false, error: CnpjError (INVALID_CHECK_DIGITS) }
- * validate("73$450392000164", { strict: true }); // { success: false, error: CnpjError (INVALID_FORMAT) }
+ * validate("12ABC34501DE99"); // { success: false, error: CnpjError (INVALID_CHECKSUM) }
+ * validate("73$450392000164"); // { success: false, error: CnpjError (INVALID_FORMAT) }
  * ```
  */
-export function validate(value: string, options: CnpjValidateOptions = {}): CnpjValidateResult {
+export function validate(value: string): CnpjValidateResult {
   if (typeof value !== "string") {
     throw new TypeError(
       `Expected a string for CNPJ validate, but received ${value === null ? "null" : typeof value}`,
     );
   }
 
-  assertOptions(options);
-
   try {
-    const normalized = preNormalize(value, options.strict ?? false);
+    const normalized = preNormalize(value);
 
     assertValid(normalized);
 
