@@ -7,10 +7,9 @@ export type CpfErrorCode =
   | "INVALID_CHECKSUM"
   | "UNKNOWN_ERROR";
 
-export interface CpfValidateResult {
-  success: boolean;
-  error: CpfError | null;
-}
+export type CpfValidateResult =
+  | { success: true; error: null }
+  | { success: false; error: CpfError };
 
 export interface CpfFormatOptions {
   pad?: boolean;

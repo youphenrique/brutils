@@ -15,7 +15,6 @@ export type CnpjGenerateOptions = {
   alphanumeric?: boolean;
 };
 
-export interface CnpjValidateResult {
-  success: boolean;
-  error: CnpjError | null;
-}
+export type CnpjValidateResult =
+  | { success: true; error: null }
+  | { success: false; error: CnpjError };
