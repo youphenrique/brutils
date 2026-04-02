@@ -56,6 +56,11 @@ describe("cpf.mask", () => {
     expect(cpf.mask("1234567890")).toBe("123.***.***-0");
   });
 
+  it("truncates input to 11 characters if longer", () => {
+    expect(cpf.mask("241550840318")).toBe("241.***.***-31");
+    expect(cpf.mask("916.534.780-39621")).toBe("916.***.***-39");
+  });
+
   it("throws a TypeError for invalid type input", () => {
     expect(() => cpf.mask(null as any)).toThrow(TypeError);
     expect(() => cpf.mask(undefined as any)).toThrow(TypeError);
