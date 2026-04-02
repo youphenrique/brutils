@@ -1,8 +1,55 @@
+# brutils - The essential Brazilian toolkit for the modern web
+
+## Project Overview
+
+`brutils` is a TypeScript monorepo focused on providing utilities for Brazilian business rules and data modeling, validation, formatting, generation. The core of the project is the `@brutils/core` package.
+
+### Key Technologies
+
+- **Monorepo Manager:** [pnpm](https://pnpm.io/)
+- **Tooling Engine:** [vite-plus (vp)](https://github.com/voidzero-dev/vite-plus) - Handles building, testing, linting, and formatting.
+- **Bundler:** [tsdown](https://github.com/privatenumber/tsdown) (via `vp pack`)
+- **Testing:** [vitest](https://vitest.dev/) (via `vp test`)
+- **Language:** TypeScript
+
+---
+
+## Project Structure
+
+- `packages/core/`: The main library containing utility functions.
+  - `src/`: Modules specific logic (validate, format, generate, etc.).
+  - `tests/`: Vitest test suites.
+- `apps/docs/`: Planned documentation website.
+
+---
+
+## Building and Running
+
+The project uses `vite-plus` (`vp`) as a unified CLI for all development tasks built on top of Vite, Rolldown, Vitest, tsdown, Oxlint, Oxfmt, and Vite Task. Vite+ wraps runtime management, package management, and frontend tooling in a single global CLI called `vp`. Vite+ is distinct from Vite, but it invokes Vite through `vp dev` and `vp build`. Commands can be run from the root or within individual packages.
+
+### Root Commands
+
+| Command             | Description                                                 |
+| :------------------ | :---------------------------------------------------------- |
+| `pnpm run ready`    | Runs format, lint, tests, and builds the entire monorepo.   |
+| `pnpm run test`     | Lints and runs tests across all packages.                   |
+| `pnpm run build -r` | Builds all packages in the monorepo.                        |
+| `pnpm run dev`      | Runs the development server for the website (if available). |
+| `vp fmt`            | Formats the codebase.                                       |
+| `vp lint`           | Lints the codebase.                                         |
+
+### Package Commands (`packages/core`)
+
+| Command           | Description                        |
+| :---------------- | :--------------------------------- |
+| `vp pack`         | Builds the package using `tsdown`. |
+| `vp pack --watch` | Builds and watches for changes.    |
+| `vp test`         | Runs tests for the package.        |
+| `tsc --noEmit`    | Performs type checking.            |
+
+---
+
 <!--VITE PLUS START-->
-
-# Using Vite+, the Unified Toolchain for the Web
-
-This project is using Vite+, a unified toolchain built on top of Vite, Rolldown, Vitest, tsdown, Oxlint, Oxfmt, and Vite Task. Vite+ wraps runtime management, package management, and frontend tooling in a single global CLI called `vp`. Vite+ is distinct from Vite, but it invokes Vite through `vp dev` and `vp build`.
 
 ## Vite+ Workflow
 
@@ -85,4 +132,26 @@ For GitHub Actions, consider using [`voidzero-dev/setup-vp`](https://github.com/
 
 - [ ] Run `vp install` after pulling remote changes and before getting started.
 - [ ] Run `vp check` and `vp test` to validate changes.
+
 <!--VITE PLUS END-->
+
+## Development Conventions
+
+### Coding Style
+
+- **TypeScript First:** All code must be written in TypeScript with strict type checking enabled.
+- **Formatting:** Use `vp fmt` to ensure consistent code style.
+- **Linting:** Use `vp lint` for static analysis. Type-aware linting is enabled by default.
+
+### Testing Practices
+
+- **Comprehensive Coverage:** New features must include unit tests in the `tests/` directory of the respective package.
+- **Test Runner:** Use `vite-plus/test` (Vitest) for writing and running tests.
+- **Validation:** Always run `vp test` before committing changes to ensure no regressions.
+
+### Contribution Workflow
+
+1.  **Research:** Identify the utility or fix needed.
+2.  **Implementation:** Add logic in the appropriate package (e.g., `packages/core/src`).
+3.  **Testing:** Add or update tests in `packages/core/tests`.
+4.  **Verification:** Run `pnpm run ready` from the root to ensure everything is correct.
