@@ -14,7 +14,9 @@ import type { CpfFormatOptions, CpfGenerateOptions, CpfValidateResult } from "./
  *
  * @example
  * ```TypeScript
+ * normalize("779.333.21"); // "77933321"
  * normalize("779.333.210-54"); // "77933321054"
+ * normalize("779.333.210-5466"); // "7793332105466"
  * ```
  */
 export function normalize(value: string): string {
@@ -23,6 +25,7 @@ export function normalize(value: string): string {
       `Expected a string for CPF normalization, but received ${value === null ? "null" : typeof value}`,
     );
   }
+
   return value.replace(/\D/g, "");
 }
 
@@ -123,6 +126,7 @@ export function formatAsYouType(value: string): string {
   }
 
   const digits = normalize(value).slice(0, LENGTH);
+
   return formatProgressive(digits, [3, 3, 3, 2], [".", ".", "-"]);
 }
 

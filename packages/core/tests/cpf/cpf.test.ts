@@ -5,7 +5,9 @@ import { CpfError } from "../../src/cpf/index.ts";
 
 describe("cpf.normalize", () => {
   it("strips non-digit characters from a formatted CPF", () => {
+    expect(cpf.normalize("779.333.21")).toBe("77933321");
     expect(cpf.normalize("916.534.780-39")).toBe("91653478039");
+    expect(cpf.normalize("779.333.210-5466")).toBe("7793332105466");
   });
 
   it("handles partially formatted and mixed inputs", () => {
