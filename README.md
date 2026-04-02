@@ -1,29 +1,5 @@
-# Vite+ Monorepo Starter
+# brutils
 
-A starter for creating a Vite+ monorepo.
+**brutils** is the essential Brazilian toolkit for the modern web, providing utilities for Brazilian business rules and data modeling, validation, formatting, and generation.
 
-## Development
-
-- Check everything is ready:
-
-```bash
-vp run ready
-```
-
-- Run the tests:
-
-```bash
-vp run test -r
-```
-
-- Build the monorepo:
-
-```bash
-vp run build -r
-```
-
-- Run the development server:
-
-```bash
-vp run dev
-```
+> **Note:** This project is currently under active development and will soon release an alpha version.
