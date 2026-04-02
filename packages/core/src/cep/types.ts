@@ -1,3 +1,5 @@
+import type { CepNotFoundError, CepProviderError, CepValidationError } from "./utils";
+
 export const PROVIDERS = ["viacep", "brasilapi", "widenet"] as const;
 
 export type ProviderName = (typeof PROVIDERS)[number];
@@ -19,9 +21,18 @@ export interface CacheStore {
   set(key: string, value: AddressResponse, ttl: number): Promise<void>;
 }
 
-export interface GetByCepOptions {
+export interface GetAddressOptions {
   providers?: ProviderName[];
   strategy?: "fallback" | "race";
   timeout?: number;
   cache?: boolean | { ttl?: number; store?: CacheStore };
 }
+
+export type CepValidationResult =
+  | { success: true; error: null }
+  | { success: false; error: CepValidationError };
+
+export type CepLookupResult =
+  | { status: "FOUND"; cep: string; provider: ProviderName; error: null }
+  | { status: "NOT_FOUND"; cep: string; provider: ProviderName; error: CepNotFoundError }
+  | { status: "UNAVAILABLE"; cep: string; provider: ProviderName; error: CepProviderError };

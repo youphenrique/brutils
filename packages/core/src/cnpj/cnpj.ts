@@ -1,4 +1,5 @@
 import { assertOptions } from "../_shared/assert-options";
+import { formatProgressive } from "../_shared/progressive-format";
 import { ALPHANUMERIC_CHARS, DIGIT_CHARS, LENGTH } from "./constants";
 import { assertValid, calcCheckDigits, preNormalize, CnpjError } from "./utils";
 import type { CnpjFormatOptions, CnpjGenerateOptions, CnpjValidateResult } from "./types";
@@ -74,6 +75,37 @@ export function format(value: string, options: CnpjFormatOptions = {}): string {
   const p5 = normalized.slice(12, 14);
 
   return `${p1}.${p2}.${p3}/${p4}-${p5}`;
+}
+
+/**
+ * Progressively formats a CNPJ while typing using the pattern `XX.XXX.XXX/XXXX-XX`.
+ *
+ * Supports alphanumeric characters through the first 12 positions. The final
+ * two check-digit positions accept only numeric digits.
+ *
+ * @param value - CNPJ value in any form.
+ * @returns A progressively formatted CNPJ string.
+ * @throws {TypeError} If the provided value is not a string.
+ *
+ * @example
+ * ```TypeScript
+ * formatAsYouType("12ABC34501DE"); // "12.ABC.345/01DE"
+ * formatAsYouType("12ABC34501DE35"); // "12.ABC.345/01DE-35"
+ * formatAsYouType("12.ABC.345/01DE-35"); // "12.ABC.345/01DE-35"
+ * ```
+ */
+export function formatAsYouType(value: string): string {
+  if (typeof value !== "string") {
+    throw new TypeError(
+      `Expected a string for CNPJ formatAsYouType, but received ${value === null ? "null" : typeof value}`,
+    );
+  }
+
+  const normalized = normalize(value).slice(0, LENGTH);
+  const base = normalized.slice(0, 12);
+  const checkDigits = normalized.slice(12).replace(/\D/g, "").slice(0, 2);
+
+  return formatProgressive(`${base}${checkDigits}`, [2, 3, 3, 4, 2], [".", ".", "/", "-"]);
 }
 
 /**

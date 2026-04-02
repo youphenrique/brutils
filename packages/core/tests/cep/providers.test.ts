@@ -1,13 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
-import { brasilapiProvider } from "../../src/addresses/providers/brasilapi";
-import { viacepProvider } from "../../src/addresses/providers/viacep";
-import { widenetProvider } from "../../src/addresses/providers/widenet";
-import {
-  ProviderNotFoundSignal,
-  ProviderRequestError,
-  resetThrottler,
-} from "../../src/addresses/utils";
+import { brasilapiProvider } from "../../src/cep/providers/brasilapi";
+import { viacepProvider } from "../../src/cep/providers/viacep";
+import { widenetProvider } from "../../src/cep/providers/widenet";
+import { ProviderNotFoundSignal, ProviderRequestError, resetThrottler } from "../../src/cep/utils";
 
 const originalFetch = globalThis.fetch;
 

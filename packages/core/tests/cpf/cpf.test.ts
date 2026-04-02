@@ -269,3 +269,36 @@ describe("cpf.generate", () => {
     expect(() => cpf.generate([] as any)).toThrow(TypeError);
   });
 });
+
+describe("cpf.formatAsYouType", () => {
+  const cases: Array<[string, string]> = [
+    ["5", "5"],
+    ["52", "52"],
+    ["522", "522"],
+    ["5226", "522.6"],
+    ["52263", "522.63"],
+    ["522639", "522.639"],
+    ["5226394", "522.639.4"],
+    ["52263944", "522.639.44"],
+    ["522639446", "522.639.446"],
+    ["5226394462", "522.639.446-2"],
+    ["52263944621", "522.639.446-21"],
+    ["522639446219", "522.639.446-21"],
+    ["522.639.446-21", "522.639.446-21"],
+    ["", ""],
+    ["abc", ""],
+  ];
+
+  it("applies progressive CPF formatting", () => {
+    for (const [input, expected] of cases) {
+      expect(cpf.formatAsYouType(input)).toBe(expected);
+    }
+  });
+
+  it("throws a TypeError for invalid type input", () => {
+    expect(() => cpf.formatAsYouType(null as any)).toThrow(TypeError);
+    expect(() => cpf.formatAsYouType(undefined as any)).toThrow(TypeError);
+    expect(() => cpf.formatAsYouType(12345678909 as any)).toThrow(TypeError);
+    expect(() => cpf.formatAsYouType({} as any)).toThrow(TypeError);
+  });
+});

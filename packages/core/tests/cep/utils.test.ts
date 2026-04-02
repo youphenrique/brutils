@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
-import type { AddressResponse } from "../../src/addresses";
+import type { AddressResponse } from "../../src/cep";
 import {
   CepNotFoundError,
   CepProviderError,
@@ -11,9 +11,9 @@ import {
   resolveCacheConfig,
   throttleProvider,
   validateCep,
-} from "../../src/addresses/utils";
+} from "../../src/cep/utils";
 
-describe("addresses CEP validation/normalization", () => {
+describe("cep CEP validation/normalization", () => {
   it("normalizes CEP by stripping non-digits", () => {
     expect(normalizeCep("01310-100")).toBe("01310100");
     expect(normalizeCep("01.310-100")).toBe("01310100");
@@ -25,31 +25,36 @@ describe("addresses CEP validation/normalization", () => {
     expect(() => normalizeCep(123 as any)).toThrow(TypeError);
   });
 
-  it("validates 8-digit CEP", () => {
+  it("validates 8-digit CEP with non-repeating guard", () => {
     expect(() => validateCep("01310100")).not.toThrow();
     expect(() => validateCep("")).toThrow(CepValidationError);
     expect(() => validateCep("1234567")).toThrow(CepValidationError);
     expect(() => validateCep("123456789")).toThrow(CepValidationError);
+    expect(() => validateCep("00000000")).toThrow(CepValidationError);
   });
 });
 
-describe("addresses errors", () => {
+describe("cep errors", () => {
   it("creates typed errors with codes", () => {
     const validation = new CepValidationError("abc");
     expect(validation.code).toBe("INVALID_CEP_FORMAT");
     expect(validation.input).toBe("abc");
 
-    const notFound = new CepNotFoundError("01310100");
+    const notFound = new CepNotFoundError("01310100", "viacep");
     expect(notFound.code).toBe("CEP_NOT_FOUND");
     expect(notFound.cep).toBe("01310100");
+    expect(notFound.provider).toBe("viacep");
 
-    const provider = new CepProviderError("01310100", [{ provider: "viacep", reason: "HTTP 500" }]);
+    const provider = new CepProviderError("01310100", "viacep", [
+      { provider: "viacep", reason: "HTTP 500" },
+    ]);
     expect(provider.code).toBe("PROVIDER_ERROR");
+    expect(provider.provider).toBe("viacep");
     expect(provider.failures).toHaveLength(1);
   });
 });
 
-describe("addresses cache helpers", () => {
+describe("cep cache helpers", () => {
   afterEach(() => {
     clearCache();
   });
@@ -109,7 +114,7 @@ describe("addresses cache helpers", () => {
   });
 });
 
-describe("addresses throttle", () => {
+describe("cep throttle", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     resetThrottler();
@@ -126,7 +131,7 @@ describe("addresses throttle", () => {
     await Promise.all(calls.slice(0, 10));
 
     let finished = false;
-    calls[10].then(() => {
+    void calls[10].then(() => {
       finished = true;
     });
 
@@ -144,7 +149,7 @@ describe("addresses throttle", () => {
 
     const eleventh = throttleProvider("viacep");
     let waited = true;
-    eleventh.then(() => {
+    void eleventh.then(() => {
       waited = false;
     });
 

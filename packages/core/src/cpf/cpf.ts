@@ -1,4 +1,5 @@
 import { assertOptions } from "../_shared/assert-options";
+import { formatProgressive } from "../_shared/progressive-format";
 import { LENGTH, UFS_REGION_MAP } from "./constants";
 import { CpfError, randomDigit, computeCheckDigit, preNormalize, assertValid } from "./utils";
 import type { CpfFormatOptions, CpfGenerateOptions, CpfValidateResult } from "./types";
@@ -98,6 +99,31 @@ export function format(value: string, options: CpfFormatOptions = {}): string {
   const masked = [part1, part2, part3].filter(Boolean).join(".");
 
   return part4.length > 0 ? `${masked}-${part4}` : masked;
+}
+
+/**
+ * Progressively formats a CPF while typing using the pattern `XXX.XXX.XXX-XX`.
+ *
+ * @param value - CPF value in any form (formatted, unformatted, or mixed).
+ * @returns A progressively formatted CPF string.
+ * @throws {TypeError} If the provided value is not a string.
+ *
+ * @example
+ * ```TypeScript
+ * formatAsYouType("5226"); // "522.6"
+ * formatAsYouType("52263944621"); // "522.639.446-21"
+ * formatAsYouType("522.639.446-21"); // "522.639.446-21"
+ * ```
+ */
+export function formatAsYouType(value: string): string {
+  if (typeof value !== "string") {
+    throw new TypeError(
+      `Expected a string for CPF formatAsYouType, but received ${value === null ? "null" : typeof value}`,
+    );
+  }
+
+  const digits = normalize(value).slice(0, LENGTH);
+  return formatProgressive(digits, [3, 3, 3, 2], [".", ".", "-"]);
 }
 
 /**

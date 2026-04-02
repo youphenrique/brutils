@@ -15,27 +15,32 @@ export class CepValidationError extends Error {
 export class CepNotFoundError extends Error {
   readonly code = "CEP_NOT_FOUND" as const;
   readonly cep: string;
+  readonly provider: ProviderName;
 
-  constructor(cep: string, message = "CEP was not found.") {
+  constructor(cep: string, provider: ProviderName, message = "CEP was not found.") {
     super(message);
     this.name = "CepNotFoundError";
     this.cep = cep;
+    this.provider = provider;
   }
 }
 
 export class CepProviderError extends Error {
   readonly code = "PROVIDER_ERROR" as const;
   readonly cep: string;
+  readonly provider: ProviderName;
   readonly failures: Array<{ provider: string; reason: string }>;
 
   constructor(
     cep: string,
+    provider: ProviderName,
     failures: Array<{ provider: string; reason: string }>,
     message = "All providers failed due to provider/network errors.",
   ) {
     super(message);
     this.name = "CepProviderError";
     this.cep = cep;
+    this.provider = provider;
     this.failures = failures;
   }
 }
@@ -57,7 +62,7 @@ export class ProviderRequestError extends Error {
   }
 }
 
-export function normalizeCep(value: string): string {
+export function normalize(value: string): string {
   if (typeof value !== "string") {
     throw new TypeError(
       `Expected a string for CEP normalization, but received ${value === null ? "null" : typeof value}`,
@@ -67,6 +72,8 @@ export function normalizeCep(value: string): string {
   return value.replace(/\D/g, "");
 }
 
+export const normalizeCep = normalize;
+
 export function validateCep(value: string): void {
   if (typeof value !== "string") {
     throw new TypeError(
@@ -74,7 +81,7 @@ export function validateCep(value: string): void {
     );
   }
 
-  if (!/^\d{8}$/.test(value)) {
+  if (!/^\d{8}$/.test(value) || /^(\d)\1{7}$/.test(value)) {
     throw new CepValidationError(value);
   }
 }

@@ -278,3 +278,45 @@ describe("cnpj.generate", () => {
     expect(() => cnpj.generate([] as unknown as object)).toThrow(TypeError);
   });
 });
+
+describe("cnpj.formatAsYouType", () => {
+  const cases: Array<[string, string]> = [
+    ["1", "1"],
+    ["11", "11"],
+    ["111", "11.1"],
+    ["1111", "11.11"],
+    ["11111", "11.111"],
+    ["111111", "11.111.1"],
+    ["1111111", "11.111.11"],
+    ["11111111", "11.111.111"],
+    ["111111111", "11.111.111/1"],
+    ["1111111111", "11.111.111/11"],
+    ["11111111111", "11.111.111/111"],
+    ["111111111111", "11.111.111/1111"],
+    ["1111111111111", "11.111.111/1111-1"],
+    ["11111111111111", "11.111.111/1111-11"],
+    ["111111111111111", "11.111.111/1111-11"],
+    ["11.111.111/1111-11", "11.111.111/1111-11"],
+    ["12A", "12.A"],
+    ["12ABC34501DE", "12.ABC.345/01DE"],
+    ["12ABC34501DE3", "12.ABC.345/01DE-3"],
+    ["12ABC34501DE35", "12.ABC.345/01DE-35"],
+    ["12ABC34501DE3X", "12.ABC.345/01DE-3"],
+    ["12.ABC.345/01DE-35", "12.ABC.345/01DE-35"],
+    ["", ""],
+    ["abc", "AB.C"],
+  ];
+
+  it("applies progressive CNPJ formatting", () => {
+    for (const [input, expected] of cases) {
+      expect(cnpj.formatAsYouType(input)).toBe(expected);
+    }
+  });
+
+  it("throws TypeError for non-string input", () => {
+    expect(() => cnpj.formatAsYouType(null as unknown as string)).toThrow(TypeError);
+    expect(() => cnpj.formatAsYouType(undefined as unknown as string)).toThrow(TypeError);
+    expect(() => cnpj.formatAsYouType(73450392000164 as unknown as string)).toThrow(TypeError);
+    expect(() => cnpj.formatAsYouType({} as unknown as string)).toThrow(TypeError);
+  });
+});
