@@ -1,7 +1,7 @@
 import { assertOptions } from "../_shared/assert-options";
 import { formatProgressive } from "../_shared/progressive-format";
-import { LENGTH, UFS_REGION_MAP } from "./constants";
-import { CpfError, randomDigit, computeCheckDigit, preNormalize, assertValid } from "./utils";
+import { CPF_LENGTH, CPF_RAW_PATTERN, UFS_REGION_MAP } from "./constants";
+import { CpfError, randomDigit, computeCheckDigit, assertValid } from "./utils";
 import type { CpfFormatOptions, CpfGenerateOptions, CpfValidateResult } from "./types";
 
 /**
@@ -44,7 +44,7 @@ export function normalize(value: string): string {
  * ```
  */
 export function mask(value: string): string {
-  const normalized = normalize(value).slice(0, LENGTH);
+  const normalized = normalize(value).slice(0, CPF_LENGTH);
 
   if (normalized.length === 0) {
     return "";
@@ -64,13 +64,12 @@ export function mask(value: string): string {
 }
 
 /**
- * Formats a CPF string into the standard Brazilian mask (`XXX.XXX.XXX-XX`).
- * Non-numeric characters are removed before formatting, and values longer than
- * 11 digits are truncated.
+ * Formats a CPF string into the standard Brazilian formatting (`XXX.XXX.XXX-XX`).
+ * CPF value (invalid, badly formatted, or not) returns as is.
  *
  * @param value - CPF value in any form (formatted, unformatted, or mixed).
  * @param options - Optional formatting options. Set `pad` to `true` to left-pad with zeros up to 11 digits.
- * @returns The CPF string with progressive or full mask applied.
+ * @returns The CPF string with formatting applied.
  *
  * @example
  * ```TypeScript
@@ -87,21 +86,13 @@ export function format(value: string, options: CpfFormatOptions = {}): string {
 
   assertOptions(options);
 
-  const digits = value.replace(/\D/g, "").slice(0, LENGTH);
-  const normalized = options.pad ? digits.padStart(LENGTH, "0") : digits;
+  const baseValue = options.pad ? value.padStart(CPF_LENGTH, "0") : value;
 
-  if (normalized.length === 0) {
-    return "";
+  if (!CPF_RAW_PATTERN.test(baseValue)) {
+    return value;
   }
 
-  const part1 = normalized.slice(0, 3);
-  const part2 = normalized.slice(3, 6);
-  const part3 = normalized.slice(6, 9);
-  const part4 = normalized.slice(9, 11);
-
-  const masked = [part1, part2, part3].filter(Boolean).join(".");
-
-  return part4.length > 0 ? `${masked}-${part4}` : masked;
+  return baseValue.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, "$1.$2.$3-$4");
 }
 
 /**
@@ -125,7 +116,7 @@ export function formatAsYouType(value: string): string {
     );
   }
 
-  const digits = normalize(value).slice(0, LENGTH);
+  const digits = normalize(value).slice(0, CPF_LENGTH);
 
   return formatProgressive(digits, [3, 3, 3, 2], [".", ".", "-"]);
 }
@@ -186,18 +177,6 @@ export function generate(options: CpfGenerateOptions = {}): string {
 /**
  * Validates a CPF string.
  *
- * It checks for:
- * - Length (exactly 11 digits).
- * - Repeated digits (e.g., "111.111.111-11").
- * - Checksum digits (first and second).
- *
- * Only two input formats are accepted:
- * - Exactly 11 digits (unformatted).
- * - Standard mask `###.###.###-##` (formatted).
- *
- * Any other format throws `CpfError("INVALID_FORMAT")`.
- * Never throws for validation errors — always returns a result object.
- *
  * @param value - CPF value to validate.
  * @returns `{ success: true, error: null }` if valid; `{ success: false, error: CpfError }` if invalid.
  * @throws {TypeError} If the provided value is not a string.
@@ -218,9 +197,7 @@ export function validate(value: string): CpfValidateResult {
   }
 
   try {
-    const normalized = preNormalize(value);
-
-    assertValid(normalized);
+    assertValid(value);
 
     return { success: true, error: null };
   } catch (error) {
