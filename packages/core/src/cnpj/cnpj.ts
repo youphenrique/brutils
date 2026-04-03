@@ -1,7 +1,7 @@
 import { assertOptions } from "../_shared/assert-options";
 import { formatProgressive } from "../_shared/progressive-format";
-import { ALPHANUMERIC_CHARS, DIGIT_CHARS, LENGTH } from "./constants";
-import { assertValid, calcCheckDigits, preNormalize, CnpjError } from "./utils";
+import { ALPHANUMERIC_CHARS, DIGIT_CHARS, CNPJ_LENGTH, CNPJ_RAW_PATTERN } from "./constants";
+import { assertValid, calcCheckDigits, CnpjError } from "./utils";
 import type { CnpjFormatOptions, CnpjGenerateOptions, CnpjValidateResult } from "./types";
 
 function randomFrom(chars: string): string {
@@ -34,10 +34,7 @@ export function normalize(value: string): string {
 
 /**
  * Formats a CNPJ string into the standard mask (`XX.XXX.XXX/XXXX-XX`).
- * Non-alphanumeric characters are removed before formatting.
- *
- * If the cleaned length is not 14 (after optional padding), the original
- * value is returned unchanged.
+ * CNPJ value (invalid, badly formatted, or not) returns as is.
  *
  * @param value - CNPJ value in any form.
  * @param options - Optional formatting options. Set `pad` to `true` to
@@ -61,27 +58,20 @@ export function format(value: string, options: CnpjFormatOptions = {}): string {
 
   assertOptions(options);
 
-  const preNormalized = value.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
-  const normalized = options.pad ? preNormalized.padStart(LENGTH, "0") : preNormalized;
+  const baseValue = options.pad ? value.padStart(CNPJ_LENGTH, "0") : value;
 
-  if (normalized.length !== LENGTH) {
+  if (!CNPJ_RAW_PATTERN.test(baseValue)) {
     return value;
   }
 
-  const p1 = normalized.slice(0, 2);
-  const p2 = normalized.slice(2, 5);
-  const p3 = normalized.slice(5, 8);
-  const p4 = normalized.slice(8, 12);
-  const p5 = normalized.slice(12, 14);
-
-  return `${p1}.${p2}.${p3}/${p4}-${p5}`;
+  return baseValue.replace(
+    /^([A-Za-z0-9]{2})([A-Za-z0-9]{3})([A-Za-z0-9]{3})([A-Za-z0-9]{4})([0-9]{2})$/,
+    "$1.$2.$3/$4-$5",
+  );
 }
 
 /**
  * Progressively formats a CNPJ while typing using the pattern `XX.XXX.XXX/XXXX-XX`.
- *
- * Supports alphanumeric characters through the first 12 positions. The final
- * two check-digit positions accept only numeric digits.
  *
  * @param value - CNPJ value in any form.
  * @returns A progressively formatted CNPJ string.
@@ -101,7 +91,7 @@ export function formatAsYouType(value: string): string {
     );
   }
 
-  const normalized = normalize(value).slice(0, LENGTH);
+  const normalized = normalize(value).slice(0, CNPJ_LENGTH);
   const base = normalized.slice(0, 12);
   const checkDigits = normalized.slice(12).replace(/\D/g, "").slice(0, 2);
 
@@ -155,20 +145,6 @@ export function generate(options: CnpjGenerateOptions = {}): string {
 /**
  * Validates a CNPJ string.
  *
- * Checks for:
- * - Valid characters (alphanumeric + allowed punctuation)
- * - Length (exactly 14 characters after stripping punctuation)
- * - All-same-character rejection
- * - Correct check digits
- *
- * Only two input formats are accepted:
- * - Raw: exactly 12 alphanumeric characters followed by 2 digits (e.g., `"73450392000164"`).
- * - Masked: standard CNPJ punctuation (`XX.XXX.XXX/XXXX-XX`) where the last
- *   two characters must be digits (e.g., `"73.450.392/0001-64"`).
- *
- * Any other format throws `CnpjError("INVALID_FORMAT")`.
- * Never throws for validation errors — always returns a result object.
- *
  * @param value - CNPJ value to validate.
  * @returns `{ success: true, error: null }` if valid; `{ success: false, error: CnpjError }` if invalid.
  * @throws {TypeError} If `value` is not a string.
@@ -188,9 +164,7 @@ export function validate(value: string): CnpjValidateResult {
   }
 
   try {
-    const normalized = preNormalize(value);
-
-    assertValid(normalized);
+    assertValid(value);
 
     return { success: true, error: null };
   } catch (error) {
