@@ -1,5 +1,12 @@
+import { getByCode } from "../../ufs";
 import type { CepProvider } from "./types";
-import { ProviderNotFoundSignal, ProviderRequestError, throttleProvider, unfetch } from "../utils";
+import {
+  CepProviderNotFoundSignal,
+  CepProviderRequestError,
+  throttleProvider,
+  unfetch,
+} from "../utils";
+import { format } from "../cep";
 
 type WidenetResponse = {
   code?: string;
@@ -19,29 +26,27 @@ export const widenetProvider: CepProvider = {
     let response: Response;
 
     try {
-      response = await unfetch(
-        `https://apps.widenet.com.br/busca-cep/api/cep/${cep}.json`,
-        timeout,
-      );
+      const formattedCep = format(cep);
+      response = await unfetch(`https://cdn.apicep.com/file/apicep/${formattedCep}.json`, timeout);
     } catch (error) {
-      throw new ProviderRequestError(
+      throw new CepProviderRequestError(
         "widenet",
         error instanceof Error ? error.message : "Unknown error",
       );
     }
 
     if (response.status === 404) {
-      throw new ProviderNotFoundSignal();
+      throw new CepProviderNotFoundSignal();
     }
 
     if (!response.ok) {
-      throw new ProviderRequestError("widenet", `HTTP ${response.status}`);
+      throw new CepProviderRequestError("widenet", `HTTP ${response.status}`);
     }
 
     const data = (await response.json()) as WidenetResponse;
 
-    if (!data.ok || data.status === 404 || !data.code) {
-      throw new ProviderNotFoundSignal();
+    if (!data.ok || data.status === 404 || data.code === undefined) {
+      throw new CepProviderNotFoundSignal();
     }
 
     return {
@@ -50,7 +55,7 @@ export const widenetProvider: CepProvider = {
       neighborhood: data.district ?? "",
       city: data.city ?? "",
       uf: data.state ?? "",
-      state: "",
+      state: getByCode(data.state ?? "")?.name ?? "",
       provider: "widenet",
     };
   },

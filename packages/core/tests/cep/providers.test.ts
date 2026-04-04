@@ -4,8 +4,8 @@ import { brasilapiProvider } from "../../src/cep/providers/brasilapi.ts";
 import { viacepProvider } from "../../src/cep/providers/viacep.ts";
 import { widenetProvider } from "../../src/cep/providers/widenet.ts";
 import {
-  ProviderNotFoundSignal,
-  ProviderRequestError,
+  CepProviderNotFoundSignal,
+  CepProviderRequestError,
   resetThrottler,
 } from "../../src/cep/utils.ts";
 
@@ -17,7 +17,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe("provider adapters", () => {
+describe("cep provider adapters", () => {
   it("maps viacep response shape", async () => {
     globalThis.fetch = vi.fn(
       async () =>
@@ -49,7 +49,7 @@ describe("provider adapters", () => {
     ) as typeof fetch;
 
     await expect(widenetProvider.fetch("00000000", 100)).rejects.toBeInstanceOf(
-      ProviderNotFoundSignal,
+      CepProviderNotFoundSignal,
     );
   });
 
@@ -76,11 +76,11 @@ describe("provider adapters", () => {
     expect(result.cep).toBe("01310100");
   });
 
-  it("converts http failures into ProviderRequestError", async () => {
+  it("converts http failures into CepProviderRequestError", async () => {
     globalThis.fetch = vi.fn(async () => new Response(null, { status: 500 })) as typeof fetch;
 
     await expect(brasilapiProvider.fetch("01310100", 100)).rejects.toBeInstanceOf(
-      ProviderRequestError,
+      CepProviderRequestError,
     );
   });
 });

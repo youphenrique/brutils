@@ -40,21 +40,21 @@ export class CepProviderError extends Error {
   }
 }
 
-export class ProviderNotFoundSignal extends Error {
+export class CepProviderNotFoundSignal extends Error {
   readonly code = "PROVIDER_NOT_FOUND" as const;
 
   constructor() {
     super("There was no result from provider found for the given CEP.");
-    this.name = "ProviderNotFoundSignal";
+    this.name = "CepProviderNotFoundSignal";
   }
 }
 
-export class ProviderRequestError extends Error {
+export class CepProviderRequestError extends Error {
   readonly provider: ProviderName;
 
   constructor(provider: ProviderName, reason: string) {
     super(reason);
-    this.name = "ProviderRequestError";
+    this.name = "CepProviderRequestError";
     this.provider = provider;
   }
 }
@@ -109,12 +109,8 @@ const defaultCacheStore = new InMemoryCacheStore();
 export function resolveCacheConfig(
   cache: boolean | { ttl?: number; store?: CacheStore } | undefined,
 ): { enabled: boolean; ttl: number; store: CacheStore } {
-  if (cache === false) {
-    return { enabled: false, ttl: DEFAULT_CACHE_TTL_SECONDS, store: defaultCacheStore };
-  }
-
-  if (cache === true || cache === undefined) {
-    return { enabled: true, ttl: DEFAULT_CACHE_TTL_SECONDS, store: defaultCacheStore };
+  if (typeof cache === "boolean" || cache === undefined) {
+    return { enabled: Boolean(cache), ttl: DEFAULT_CACHE_TTL_SECONDS, store: defaultCacheStore };
   }
 
   return {
@@ -222,11 +218,11 @@ export async function runFallback(
     try {
       return await provider.fetch(cep, timeout);
     } catch (error) {
-      if (error instanceof ProviderNotFoundSignal) {
+      if (error instanceof CepProviderNotFoundSignal) {
         throw new CepNotFoundError(providerName);
       }
 
-      if (error instanceof ProviderRequestError) {
+      if (error instanceof CepProviderRequestError) {
         failures.push({ provider: providerName, reason: error.message });
         continue;
       }
@@ -254,15 +250,15 @@ export async function runRace(
     try {
       return await provider.fetch(cep, timeout);
     } catch (error) {
-      if (error instanceof ProviderNotFoundSignal) {
+      if (error instanceof CepProviderNotFoundSignal) {
         throw new CepNotFoundError(providerName);
       }
 
-      if (error instanceof ProviderRequestError) {
+      if (error instanceof CepProviderRequestError) {
         throw error;
       }
 
-      throw new ProviderRequestError(
+      throw new CepProviderRequestError(
         providerName,
         error instanceof Error ? error.message : "Unknown error",
       );
@@ -287,7 +283,7 @@ export async function runRace(
       .filter((result): result is PromiseRejectedResult => result.status === "rejected")
       .map((result) => {
         const reason = result.reason;
-        if (reason instanceof ProviderRequestError) {
+        if (reason instanceof CepProviderRequestError) {
           return { provider: reason.provider, reason: reason.message };
         }
 
