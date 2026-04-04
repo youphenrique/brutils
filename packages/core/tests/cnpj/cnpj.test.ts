@@ -3,8 +3,6 @@ import { describe, expect, it } from "vite-plus/test";
 import { cnpj } from "../../src/index.ts";
 import { CnpjError } from "../../src/cnpj/index.ts";
 
-// ─── cnpj.normalize ──────────────────────────────────────────────────────────
-
 describe("cnpj.normalize", () => {
   it("strips punctuation from a formatted numeric CNPJ", () => {
     expect(cnpj.normalize("73.450.392/0001-64")).toBe("73450392000164");
@@ -32,46 +30,41 @@ describe("cnpj.normalize", () => {
   });
 
   it("throws TypeError for non-string input", () => {
-    expect(() => cnpj.normalize(null as unknown as string)).toThrow(TypeError);
-    expect(() => cnpj.normalize(undefined as unknown as string)).toThrow(TypeError);
-    expect(() => cnpj.normalize(73450392000164 as unknown as string)).toThrow(TypeError);
-    expect(() => cnpj.normalize({} as unknown as string)).toThrow(TypeError);
+    expect(() => cnpj.normalize(null as any)).toThrow(TypeError);
+    expect(() => cnpj.normalize(undefined as any)).toThrow(TypeError);
+    expect(() => cnpj.normalize(73450392000164 as any)).toThrow(TypeError);
+    expect(() => cnpj.normalize({} as any)).toThrow(TypeError);
   });
 });
 
-// ─── cnpj.format ─────────────────────────────────────────────────────────────
-
 describe("cnpj.format", () => {
-  it("formats a clean numeric CNPJ", () => {
+  it("formats a clean numeric and alphanumeric CNPJ", () => {
     expect(cnpj.format("73450392000164")).toBe("73.450.392/0001-64");
-  });
-
-  it("formats an already-formatted CNPJ (idempotent)", () => {
-    expect(cnpj.format("73.450.392/0001-64")).toBe("73.450.392/0001-64");
-  });
-
-  it("formats a clean alphanumeric CNPJ", () => {
     expect(cnpj.format("12ABC34501DE35")).toBe("12.ABC.345/01DE-35");
   });
 
-  it("strips spaces before formatting", () => {
-    expect(cnpj.format("12ABC3450 1DE35")).toBe("12.ABC.345/01DE-35");
+  it("formats an already-formatted numeric and alphanumeric CNPJ (idempotent)", () => {
+    expect(cnpj.format("73.450.392/0001-64")).toBe("73.450.392/0001-64");
+    expect(cnpj.format("12.ABC.345/01DE-35")).toBe("12.ABC.345/01DE-35");
   });
 
-  it("returns original value unchanged when length is not 14 after cleaning", () => {
-    const short = "1234";
-    expect(cnpj.format(short)).toBe(short);
+  it("returns as is for CPFs with whitespace and non-numeric characters", () => {
+    expect(cnpj.format(" 12 ABC 345 01DE 35")).toBe(" 12 ABC 345 01DE 35");
+    expect(cnpj.format("12.?ABC@345-01DE$35abc")).toBe("12.?ABC@345-01DE$35abc");
+    expect(cnpj.format("12.ABC.34501DE35")).toBe("12.ABC.34501DE35");
+  });
+
+  it("returns as is for invalid CNPJ lengths", () => {
+    expect(cnpj.format("")).toBe("");
+    expect(cnpj.format("AB34")).toBe("AB34");
+    expect(cnpj.format("12ABC34501DE35ZZ")).toBe("12ABC34501DE35ZZ");
   });
 
   it("left-pads with zeros and formats when pad option is enabled", () => {
-    // "73450" (5 chars) padded to 14 → "000000000" + "73450"... wait:
-    // 5 chars, need 14 → prepend 9 zeros = "00000000073450"
-    // Formatted: "00.000.000/0734-50"
+    expect(cnpj.format("", { pad: true })).toBe("00.000.000/0000-00");
     expect(cnpj.format("73450", { pad: true })).toBe("00.000.000/0734-50");
-  });
-
-  it("pad with already-14-char input is a no-op for padding", () => {
     expect(cnpj.format("73450392000164", { pad: true })).toBe("73.450.392/0001-64");
+    expect(cnpj.format("12ABC34501DE35ZZ", { pad: true })).toBe("12ABC34501DE35ZZ");
   });
 
   it("accepts undefined options and uses defaults", () => {
@@ -79,22 +72,19 @@ describe("cnpj.format", () => {
   });
 
   it("throws TypeError for non-string input", () => {
-    expect(() => cnpj.format(null as unknown as string)).toThrow(TypeError);
-    expect(() => cnpj.format(undefined as unknown as string)).toThrow(TypeError);
-    expect(() => cnpj.format(73450392000164 as unknown as string)).toThrow(TypeError);
+    expect(() => cnpj.format(null as any)).toThrow(TypeError);
+    expect(() => cnpj.format(undefined as any)).toThrow(TypeError);
+    expect(() => cnpj.format(73450392000164 as any)).toThrow(TypeError);
   });
 
   it("throws TypeError for invalid options type", () => {
-    expect(() => cnpj.format("73450392000164", null as unknown as object)).toThrow(TypeError);
-    expect(() => cnpj.format("73450392000164", 123 as unknown as object)).toThrow(TypeError);
-    expect(() => cnpj.format("73450392000164", [] as unknown as object)).toThrow(TypeError);
+    expect(() => cnpj.format("73450392000164", null as any)).toThrow(TypeError);
+    expect(() => cnpj.format("73450392000164", 123 as any)).toThrow(TypeError);
+    expect(() => cnpj.format("73450392000164", [] as any)).toThrow(TypeError);
   });
 });
 
-// ─── cnpj.validate ───────────────────────────────────────────────────────────
-
 describe("cnpj.validate", () => {
-  // Numeric CNPJ
   it("rejects all-same-character CNPJ", () => {
     let result = cnpj.validate("00000000000000");
     expect(result.success).toBe(false);
@@ -184,8 +174,6 @@ describe("cnpj.validate", () => {
   });
 });
 
-// ─── CnpjError class ─────────────────────────────────────────────────────────
-
 describe("CnpjError", () => {
   it("is a proper subclass of Error", () => {
     const err = new CnpjError("INVALID_FORMAT");
@@ -213,8 +201,6 @@ describe("CnpjError", () => {
     expect(err.message).toBe("Custom message");
   });
 });
-
-// ─── cnpj.generate ───────────────────────────────────────────────────────────
 
 describe("cnpj.generate", () => {
   it("generates a valid 14-character numeric CNPJ by default", () => {
@@ -276,5 +262,47 @@ describe("cnpj.generate", () => {
     expect(() => cnpj.generate(123 as unknown as object)).toThrow(TypeError);
     expect(() => cnpj.generate("x" as unknown as object)).toThrow(TypeError);
     expect(() => cnpj.generate([] as unknown as object)).toThrow(TypeError);
+  });
+});
+
+describe("cnpj.formatAsYouType", () => {
+  const cases: Array<[string, string]> = [
+    ["1", "1"],
+    ["11", "11"],
+    ["111", "11.1"],
+    ["1111", "11.11"],
+    ["11111", "11.111"],
+    ["111111", "11.111.1"],
+    ["1111111", "11.111.11"],
+    ["11111111", "11.111.111"],
+    ["111111111", "11.111.111/1"],
+    ["1111111111", "11.111.111/11"],
+    ["11111111111", "11.111.111/111"],
+    ["111111111111", "11.111.111/1111"],
+    ["1111111111111", "11.111.111/1111-1"],
+    ["11111111111111", "11.111.111/1111-11"],
+    ["111111111111111", "11.111.111/1111-11"],
+    ["11.111.111/1111-11", "11.111.111/1111-11"],
+    ["12A", "12.A"],
+    ["12ABC34501DE", "12.ABC.345/01DE"],
+    ["12ABC34501DE3", "12.ABC.345/01DE-3"],
+    ["12ABC34501DE35", "12.ABC.345/01DE-35"],
+    ["12ABC34501DE3X", "12.ABC.345/01DE-3"],
+    ["12.ABC.345/01DE-35", "12.ABC.345/01DE-35"],
+    ["", ""],
+    ["abc", "AB.C"],
+  ];
+
+  it("applies progressive CNPJ formatting", () => {
+    for (const [input, expected] of cases) {
+      expect(cnpj.formatAsYouType(input)).toBe(expected);
+    }
+  });
+
+  it("throws TypeError for non-string input", () => {
+    expect(() => cnpj.formatAsYouType(null as unknown as string)).toThrow(TypeError);
+    expect(() => cnpj.formatAsYouType(undefined as unknown as string)).toThrow(TypeError);
+    expect(() => cnpj.formatAsYouType(73450392000164 as unknown as string)).toThrow(TypeError);
+    expect(() => cnpj.formatAsYouType({} as unknown as string)).toThrow(TypeError);
   });
 });

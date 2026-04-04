@@ -5,7 +5,9 @@ import { CpfError } from "../../src/cpf/index.ts";
 
 describe("cpf.normalize", () => {
   it("strips non-digit characters from a formatted CPF", () => {
+    expect(cpf.normalize("779.333.21")).toBe("77933321");
     expect(cpf.normalize("916.534.780-39")).toBe("91653478039");
+    expect(cpf.normalize("779.333.210-5466")).toBe("7793332105466");
   });
 
   it("handles partially formatted and mixed inputs", () => {
@@ -54,6 +56,11 @@ describe("cpf.mask", () => {
     expect(cpf.mask("1234567890")).toBe("123.***.***-0");
   });
 
+  it("truncates input to 11 characters if longer", () => {
+    expect(cpf.mask("241550840318")).toBe("241.***.***-31");
+    expect(cpf.mask("916.534.780-39621")).toBe("916.***.***-39");
+  });
+
   it("throws a TypeError for invalid type input", () => {
     expect(() => cpf.mask(null as any)).toThrow(TypeError);
     expect(() => cpf.mask(undefined as any)).toThrow(TypeError);
@@ -71,30 +78,28 @@ describe("cpf.format", () => {
     expect(cpf.format("522.639.446-21")).toBe("522.639.446-21");
   });
 
-  it("formats partially formatted CPF", () => {
-    expect(cpf.format("522.63944621")).toBe("522.639.446-21");
-  });
-
   it("preserves leading zeros", () => {
     expect(cpf.format("00000000191")).toBe("000.000.001-91");
   });
 
-  it("strips whitespace and non-numeric characters", () => {
-    expect(cpf.format("  522 639 446 21  ")).toBe("522.639.446-21");
-    expect(cpf.format("943.?ABC895.751-04abc")).toBe("943.895.751-04");
+  it("returns as is for CPFs with whitespace and non-numeric characters", () => {
+    expect(cpf.format("  522 639 446 21  ")).toBe("  522 639 446 21  ");
+    expect(cpf.format("943.?ABC895.751-04abc")).toBe("943.?ABC895.751-04abc");
+    expect(cpf.format("522.63944621")).toBe("522.63944621");
   });
 
-  it("handles invalid lengths and empty input", () => {
+  it("returns as is for invalid CPF lengths", () => {
     expect(cpf.format("")).toBe("");
     expect(cpf.format("9")).toBe("9");
-    expect(cpf.format("9438")).toBe("943.8");
-    expect(cpf.format("94389575104000000")).toBe("943.895.751-04");
+    expect(cpf.format("9438")).toBe("9438");
+    expect(cpf.format("51660311055742")).toBe("51660311055742");
   });
 
   it("left-pads with zeros when pad option is enabled", () => {
     expect(cpf.format("", { pad: true })).toBe("000.000.000-00");
     expect(cpf.format("9", { pad: true })).toBe("000.000.000-09");
     expect(cpf.format("94389575104", { pad: true })).toBe("943.895.751-04");
+    expect(cpf.format("9438957510466", { pad: true })).toBe("9438957510466");
   });
 
   it("accepts undefined options and uses defaults", () => {
@@ -182,18 +187,11 @@ describe("CpfError", () => {
     expect(err).toBeInstanceOf(CpfError);
   });
 
-  it("has name CpfError", () => {
+  it("CpfError has its properties", () => {
     const err = new CpfError("INVALID_FORMAT");
     expect(err.name).toBe("CpfError");
-  });
-
-  it("stores the error code", () => {
-    const err = new CpfError("INVALID_CHECKSUM");
-    expect(err.code).toBe("INVALID_CHECKSUM");
-  });
-
-  it("uses code as default message when no message is provided", () => {
-    const err = new CpfError("INVALID_FORMAT");
+    expect(err.code).toBe("INVALID_FORMAT");
+    // uses code as default message when no message is provided
     expect(err.message).toBe("INVALID_FORMAT");
   });
 
@@ -267,5 +265,38 @@ describe("cpf.generate", () => {
     expect(() => cpf.generate("x" as any)).toThrow(TypeError);
     expect(() => cpf.generate(true as any)).toThrow(TypeError);
     expect(() => cpf.generate([] as any)).toThrow(TypeError);
+  });
+});
+
+describe("cpf.formatAsYouType", () => {
+  const cases: Array<[string, string]> = [
+    ["5", "5"],
+    ["52", "52"],
+    ["522", "522"],
+    ["5226", "522.6"],
+    ["52263", "522.63"],
+    ["522639", "522.639"],
+    ["5226394", "522.639.4"],
+    ["52263944", "522.639.44"],
+    ["522639446", "522.639.446"],
+    ["5226394462", "522.639.446-2"],
+    ["52263944621", "522.639.446-21"],
+    ["522639446219", "522.639.446-21"],
+    ["522.639.446-21", "522.639.446-21"],
+    ["", ""],
+    ["abc", ""],
+  ];
+
+  it("applies progressive CPF formatting", () => {
+    for (const [input, expected] of cases) {
+      expect(cpf.formatAsYouType(input)).toBe(expected);
+    }
+  });
+
+  it("throws a TypeError for invalid type input", () => {
+    expect(() => cpf.formatAsYouType(null as any)).toThrow(TypeError);
+    expect(() => cpf.formatAsYouType(undefined as any)).toThrow(TypeError);
+    expect(() => cpf.formatAsYouType(12345678909 as any)).toThrow(TypeError);
+    expect(() => cpf.formatAsYouType({} as any)).toThrow(TypeError);
   });
 });

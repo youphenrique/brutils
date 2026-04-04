@@ -1,4 +1,7 @@
-export const LENGTH = 11;
+export const CPF_LENGTH = 11;
+
+export const CPF_RAW_PATTERN = /^\d{11}$/;
+export const CPF_FORMATTED_PATTERN = /^\d{3}\.\d{3}\.\d{3}-\d{2}$/;
 
 export const UFS_REGION_MAP = {
   DF: 1,
