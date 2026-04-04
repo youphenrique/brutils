@@ -4,12 +4,12 @@ import type { CnpjErrorCode } from "./types";
 // ─── Error class ─────────────────────────────────────────────────────────────
 
 export class CnpjError extends Error {
-  code: CnpjErrorCode;
-
-  constructor(code: CnpjErrorCode, message?: string) {
+  constructor(
+    readonly code: CnpjErrorCode,
+    message?: string,
+  ) {
     super(message ?? code);
     this.name = "CnpjError";
-    this.code = code;
   }
 }
 

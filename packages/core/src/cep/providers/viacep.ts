@@ -1,11 +1,5 @@
-import {
-  fetchWithTimeout,
-  normalizeCep,
-  ProviderNotFoundSignal,
-  ProviderRequestError,
-  throttleProvider,
-} from "../utils";
 import type { CepProvider } from "./types";
+import { unfetch, ProviderNotFoundSignal, ProviderRequestError, throttleProvider } from "../utils";
 
 type ViaCepResponse = {
   cep?: string;
@@ -25,8 +19,9 @@ export const viacepProvider: CepProvider = {
     await throttleProvider("viacep");
 
     let response: Response;
+
     try {
-      response = await fetchWithTimeout(`https://viacep.com.br/ws/${cep}/json/`, timeout);
+      response = await unfetch(`https://viacep.com.br/ws/${cep}/json/`, timeout);
     } catch (error) {
       throw new ProviderRequestError(
         "viacep",
@@ -48,7 +43,7 @@ export const viacepProvider: CepProvider = {
     }
 
     return {
-      cep: normalizeCep(data.cep),
+      cep: data.cep.replace(/-/g, ""),
       street: data.logradouro ?? "",
       neighborhood: data.bairro ?? "",
       city: data.localidade ?? "",

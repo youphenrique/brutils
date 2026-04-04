@@ -2,12 +2,12 @@ import type { CpfErrorCode } from "./types";
 import { CPF_FORMATTED_PATTERN, CPF_RAW_PATTERN } from "./constants";
 
 export class CpfError extends Error {
-  readonly code: CpfErrorCode;
-
-  constructor(code: CpfErrorCode, message?: string) {
+  constructor(
+    readonly code: CpfErrorCode,
+    message?: string,
+  ) {
     super(message ?? code);
     this.name = "CpfError";
-    this.code = code;
   }
 }
 

@@ -1,5 +1,5 @@
 export function formatProgressive(
-  digits: string,
+  chars: string,
   segmentLengths: number[],
   separators: string[],
 ): string {
@@ -7,11 +7,11 @@ export function formatProgressive(
   let cursor = 0;
 
   for (const length of segmentLengths) {
-    if (cursor >= digits.length) {
+    if (cursor >= chars.length) {
       break;
     }
 
-    const segment = digits.slice(cursor, cursor + length);
+    const segment = chars.slice(cursor, cursor + length);
     if (segment.length > 0) {
       segments.push(segment);
     }

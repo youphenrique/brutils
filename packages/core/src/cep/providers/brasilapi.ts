@@ -1,10 +1,4 @@
-import {
-  ProviderNotFoundSignal,
-  ProviderRequestError,
-  throttleProvider,
-  fetchWithTimeout,
-  normalizeCep,
-} from "../utils";
+import { ProviderNotFoundSignal, ProviderRequestError, throttleProvider, unfetch } from "../utils";
 import type { CepProvider } from "./types";
 
 type BrasilApiResponse = {
@@ -25,7 +19,7 @@ export const brasilapiProvider: CepProvider = {
 
     let response: Response;
     try {
-      response = await fetchWithTimeout(`https://brasilapi.com.br/api/cep/v1/${cep}`, timeout);
+      response = await unfetch(`https://brasilapi.com.br/api/cep/v1/${cep}`, timeout);
     } catch (error) {
       throw new ProviderRequestError(
         "brasilapi",
@@ -47,7 +41,7 @@ export const brasilapiProvider: CepProvider = {
     }
 
     return {
-      cep: normalizeCep(data.cep),
+      cep: data.cep.replace(/-/g, ""),
       street: data.street ?? "",
       neighborhood: data.neighborhood ?? "",
       city: data.city ?? "",

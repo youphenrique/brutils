@@ -1,11 +1,5 @@
-import {
-  ProviderNotFoundSignal,
-  ProviderRequestError,
-  throttleProvider,
-  fetchWithTimeout,
-  normalizeCep,
-} from "../utils";
 import type { CepProvider } from "./types";
+import { ProviderNotFoundSignal, ProviderRequestError, throttleProvider, unfetch } from "../utils";
 
 type WidenetResponse = {
   code?: string;
@@ -25,7 +19,7 @@ export const widenetProvider: CepProvider = {
     let response: Response;
 
     try {
-      response = await fetchWithTimeout(
+      response = await unfetch(
         `https://apps.widenet.com.br/busca-cep/api/cep/${cep}.json`,
         timeout,
       );
@@ -51,7 +45,7 @@ export const widenetProvider: CepProvider = {
     }
 
     return {
-      cep: normalizeCep(data.code),
+      cep: data.code.replace(/-/g, ""),
       street: data.address ?? "",
       neighborhood: data.district ?? "",
       city: data.city ?? "",

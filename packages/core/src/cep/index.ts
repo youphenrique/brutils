@@ -1,12 +1,5 @@
 export { PROVIDERS } from "./types";
-export {
-  format,
-  formatAsYouType,
-  getAddress,
-  lookup,
-  normalizeCep as normalize,
-  validate,
-} from "./cep";
+export { format, formatAsYouType, getAddress, lookup, normalize, validate } from "./cep";
 export {
   CepValidationError,
   CepNotFoundError,

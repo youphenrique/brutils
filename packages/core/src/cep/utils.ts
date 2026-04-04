@@ -1,53 +1,50 @@
-import { DEFAULT_CACHE_TTL_SECONDS, PROVIDER_THROTTLE } from "./constants";
-import type { AddressResponse, CacheStore, ProviderName } from "./types";
+import { providerRegistry } from "./providers";
+import type { AddressResponse, CacheStore, CepErrorCode, ProviderName } from "./types";
+import {
+  CEP_FORMATTED_PATTERN,
+  CEP_RAW_PATTERN,
+  DEFAULT_CACHE_TTL_SECONDS,
+  DEFAULT_PROVIDER_ORDER,
+  PROVIDER_THROTTLE,
+} from "./constants";
 
 export class CepValidationError extends Error {
-  readonly code = "INVALID_CEP_FORMAT" as const;
-  readonly input: string;
-
-  constructor(input: string, message = "CEP must contain exactly 8 digits after normalization.") {
-    super(message);
+  constructor(
+    readonly code: CepErrorCode,
+    message?: string,
+  ) {
+    super(message ?? code);
     this.name = "CepValidationError";
-    this.input = input;
   }
 }
 
 export class CepNotFoundError extends Error {
-  readonly code = "CEP_NOT_FOUND" as const;
-  readonly cep: string;
-  readonly provider: ProviderName;
+  readonly code = "NOT_FOUND" as const;
 
-  constructor(cep: string, provider: ProviderName, message = "CEP was not found.") {
-    super(message);
+  constructor(readonly provider: ProviderName) {
+    super("There was no result for the provided CEP.");
     this.name = "CepNotFoundError";
-    this.cep = cep;
-    this.provider = provider;
   }
 }
 
 export class CepProviderError extends Error {
   readonly code = "PROVIDER_ERROR" as const;
-  readonly cep: string;
   readonly provider: ProviderName;
   readonly failures: Array<{ provider: string; reason: string }>;
 
-  constructor(
-    cep: string,
-    provider: ProviderName,
-    failures: Array<{ provider: string; reason: string }>,
-    message = "All providers failed due to provider/network errors.",
-  ) {
-    super(message);
+  constructor(provider: ProviderName, failures: Array<{ provider: string; reason: string }>) {
+    super("All providers failed due to provider/network errors.");
     this.name = "CepProviderError";
-    this.cep = cep;
     this.provider = provider;
     this.failures = failures;
   }
 }
 
 export class ProviderNotFoundSignal extends Error {
+  readonly code = "PROVIDER_NOT_FOUND" as const;
+
   constructor() {
-    super("NOT_FOUND");
+    super("There was no result from provider found for the given CEP.");
     this.name = "ProviderNotFoundSignal";
   }
 }
@@ -62,27 +59,21 @@ export class ProviderRequestError extends Error {
   }
 }
 
-export function normalize(value: string): string {
-  if (typeof value !== "string") {
-    throw new TypeError(
-      `Expected a string for CEP normalization, but received ${value === null ? "null" : typeof value}`,
+export function assertValid(value: string): void {
+  if (!CEP_RAW_PATTERN.test(value) && !CEP_FORMATTED_PATTERN.test(value)) {
+    throw new CepValidationError(
+      "INVALID_FORMAT",
+      "Only 8 digits or #####-### format are accepted.",
     );
   }
 
-  return value.replace(/\D/g, "");
-}
+  const normalized = value.replace(/\D/g, "");
 
-export const normalizeCep = normalize;
-
-export function validateCep(value: string): void {
-  if (typeof value !== "string") {
-    throw new TypeError(
-      `Expected a string for CEP validation, but received ${value === null ? "null" : typeof value}`,
+  if (/^(\d)\1{7}$/.test(normalized)) {
+    throw new CepValidationError(
+      "REPEATED_DIGITS",
+      "There are no valid CEP's with sequences of repeated numbers.",
     );
-  }
-
-  if (!/^\d{8}$/.test(value) || /^(\d)\1{7}$/.test(value)) {
-    throw new CepValidationError(value);
   }
 }
 
@@ -201,7 +192,7 @@ export function resetThrottler(): void {
   };
 }
 
-export async function fetchWithTimeout(url: string, timeout: number): Promise<Response> {
+export async function unfetch(url: string, timeout: number): Promise<Response> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeout);
 
@@ -215,5 +206,103 @@ export async function fetchWithTimeout(url: string, timeout: number): Promise<Re
     throw error;
   } finally {
     clearTimeout(timer);
+  }
+}
+
+export async function runFallback(
+  cep: string,
+  providers: ProviderName[],
+  timeout: number,
+): Promise<AddressResponse> {
+  const failures: Array<{ provider: string; reason: string }> = [];
+
+  for (const providerName of providers) {
+    const provider = providerRegistry[providerName];
+
+    try {
+      return await provider.fetch(cep, timeout);
+    } catch (error) {
+      if (error instanceof ProviderNotFoundSignal) {
+        throw new CepNotFoundError(providerName);
+      }
+
+      if (error instanceof ProviderRequestError) {
+        failures.push({ provider: providerName, reason: error.message });
+        continue;
+      }
+
+      failures.push({
+        provider: providerName,
+        reason: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  }
+
+  const lastProvider = providers[providers.length - 1] ?? DEFAULT_PROVIDER_ORDER[0];
+
+  throw new CepProviderError(lastProvider, failures);
+}
+
+export async function runRace(
+  cep: string,
+  providers: ProviderName[],
+  timeout: number,
+): Promise<AddressResponse> {
+  const tasks = providers.map(async (providerName) => {
+    const provider = providerRegistry[providerName];
+
+    try {
+      return await provider.fetch(cep, timeout);
+    } catch (error) {
+      if (error instanceof ProviderNotFoundSignal) {
+        throw new CepNotFoundError(providerName);
+      }
+
+      if (error instanceof ProviderRequestError) {
+        throw error;
+      }
+
+      throw new ProviderRequestError(
+        providerName,
+        error instanceof Error ? error.message : "Unknown error",
+      );
+    }
+  });
+
+  try {
+    return await Promise.any(tasks);
+  } catch {
+    const settled = await Promise.allSettled(tasks);
+
+    const firstNotFound = settled.find(
+      (result): result is PromiseRejectedResult =>
+        result.status === "rejected" && result.reason instanceof CepNotFoundError,
+    );
+
+    if (firstNotFound?.reason instanceof CepNotFoundError) {
+      throw firstNotFound.reason;
+    }
+
+    const failures = settled
+      .filter((result): result is PromiseRejectedResult => result.status === "rejected")
+      .map((result) => {
+        const reason = result.reason;
+        if (reason instanceof ProviderRequestError) {
+          return { provider: reason.provider, reason: reason.message };
+        }
+
+        return {
+          provider: "unknown",
+          reason: reason instanceof Error ? reason.message : "Unknown error",
+        };
+      });
+
+    const lastProvider = failures[failures.length - 1]?.provider;
+
+    const provider = (providers.find((provider) => provider === lastProvider) ??
+      providers[providers.length - 1] ??
+      DEFAULT_PROVIDER_ORDER[0]) as ProviderName;
+
+    throw new CepProviderError(provider, failures);
   }
 }

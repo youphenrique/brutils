@@ -1,58 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
-import type { AddressResponse } from "../../src/cep";
+import type { AddressResponse } from "../../src/cep/index.ts";
 import {
-  CepNotFoundError,
-  CepProviderError,
-  CepValidationError,
   clearCache,
-  normalizeCep,
   resetThrottler,
   resolveCacheConfig,
   throttleProvider,
-  validateCep,
-} from "../../src/cep/utils";
-
-describe("cep CEP validation/normalization", () => {
-  it("normalizes CEP by stripping non-digits", () => {
-    expect(normalizeCep("01310-100")).toBe("01310100");
-    expect(normalizeCep("01.310-100")).toBe("01310100");
-  });
-
-  it("throws for invalid normalize input type", () => {
-    expect(() => normalizeCep(null as any)).toThrow(TypeError);
-    expect(() => normalizeCep(undefined as any)).toThrow(TypeError);
-    expect(() => normalizeCep(123 as any)).toThrow(TypeError);
-  });
-
-  it("validates 8-digit CEP with non-repeating guard", () => {
-    expect(() => validateCep("01310100")).not.toThrow();
-    expect(() => validateCep("")).toThrow(CepValidationError);
-    expect(() => validateCep("1234567")).toThrow(CepValidationError);
-    expect(() => validateCep("123456789")).toThrow(CepValidationError);
-    expect(() => validateCep("00000000")).toThrow(CepValidationError);
-  });
-});
-
-describe("cep errors", () => {
-  it("creates typed errors with codes", () => {
-    const validation = new CepValidationError("abc");
-    expect(validation.code).toBe("INVALID_CEP_FORMAT");
-    expect(validation.input).toBe("abc");
-
-    const notFound = new CepNotFoundError("01310100", "viacep");
-    expect(notFound.code).toBe("CEP_NOT_FOUND");
-    expect(notFound.cep).toBe("01310100");
-    expect(notFound.provider).toBe("viacep");
-
-    const provider = new CepProviderError("01310100", "viacep", [
-      { provider: "viacep", reason: "HTTP 500" },
-    ]);
-    expect(provider.code).toBe("PROVIDER_ERROR");
-    expect(provider.provider).toBe("viacep");
-    expect(provider.failures).toHaveLength(1);
-  });
-});
+} from "../../src/cep/utils.ts";
 
 describe("cep cache helpers", () => {
   afterEach(() => {
@@ -61,6 +15,7 @@ describe("cep cache helpers", () => {
 
   it("uses default cache when true", async () => {
     const config = resolveCacheConfig(true);
+
     expect(config.enabled).toBe(true);
     expect(config.ttl).toBe(3600);
   });
@@ -78,6 +33,7 @@ describe("cep cache helpers", () => {
 
     const config = resolveCacheConfig({ ttl: 12, store });
     expect(config.ttl).toBe(12);
+
     const sample: AddressResponse = {
       cep: "01310100",
       street: "A",
@@ -94,6 +50,7 @@ describe("cep cache helpers", () => {
 
   it("expires default cache entries by ttl", async () => {
     vi.useFakeTimers();
+
     const config = resolveCacheConfig(true);
     const sample: AddressResponse = {
       cep: "01310100",

@@ -1,189 +1,192 @@
-import { DEFAULT_PROVIDER_ORDER, DEFAULT_TIMEOUT_MS } from "./constants";
-import { providerRegistry } from "./providers";
+import { assertOptions } from "../_shared/assert-options";
+import { formatProgressive } from "../_shared/progressive-format";
+import {
+  CEP_LENGTH,
+  CEP_RAW_PATTERN,
+  DEFAULT_PROVIDER_ORDER,
+  DEFAULT_TIMEOUT_MS,
+} from "./constants";
 import type {
   AddressResponse,
+  CepFormatOptions,
   CepLookupResult,
   CepValidationResult,
   GetAddressOptions,
-  ProviderName,
 } from "./types";
 import {
+  assertValid,
   CepNotFoundError,
   CepProviderError,
   CepValidationError,
-  ProviderNotFoundSignal,
-  ProviderRequestError,
-  normalize,
   resolveCacheConfig,
-  validateCep,
+  runFallback,
+  runRace,
 } from "./utils";
 
-async function runFallback(
-  cep: string,
-  providers: ProviderName[],
-  timeout: number,
-): Promise<AddressResponse> {
-  const failures: Array<{ provider: string; reason: string }> = [];
-
-  for (const providerName of providers) {
-    const provider = providerRegistry[providerName];
-
-    try {
-      return await provider.fetch(cep, timeout);
-    } catch (error) {
-      if (error instanceof ProviderNotFoundSignal) {
-        throw new CepNotFoundError(cep, providerName);
-      }
-
-      if (error instanceof ProviderRequestError) {
-        failures.push({ provider: providerName, reason: error.message });
-        continue;
-      }
-
-      failures.push({
-        provider: providerName,
-        reason: error instanceof Error ? error.message : "Unknown error",
-      });
-    }
-  }
-
-  const lastProvider = providers[providers.length - 1] ?? DEFAULT_PROVIDER_ORDER[0];
-  throw new CepProviderError(cep, lastProvider, failures);
-}
-
-async function runRace(
-  cep: string,
-  providers: ProviderName[],
-  timeout: number,
-): Promise<AddressResponse> {
-  const tasks = providers.map(async (providerName) => {
-    const provider = providerRegistry[providerName];
-
-    try {
-      return await provider.fetch(cep, timeout);
-    } catch (error) {
-      if (error instanceof ProviderNotFoundSignal) {
-        throw new CepNotFoundError(cep, providerName);
-      }
-
-      if (error instanceof ProviderRequestError) {
-        throw error;
-      }
-
-      throw new ProviderRequestError(
-        providerName,
-        error instanceof Error ? error.message : "Unknown error",
-      );
-    }
-  });
-
-  try {
-    return await Promise.any(tasks);
-  } catch {
-    const settled = await Promise.allSettled(tasks);
-
-    const firstNotFound = settled.find(
-      (result): result is PromiseRejectedResult =>
-        result.status === "rejected" && result.reason instanceof CepNotFoundError,
-    );
-
-    if (firstNotFound?.reason instanceof CepNotFoundError) {
-      throw firstNotFound.reason;
-    }
-
-    const failures = settled
-      .filter((result): result is PromiseRejectedResult => result.status === "rejected")
-      .map((result) => {
-        const reason = result.reason;
-        if (reason instanceof ProviderRequestError) {
-          return { provider: reason.provider, reason: reason.message };
-        }
-
-        return {
-          provider: "unknown",
-          reason: reason instanceof Error ? reason.message : "Unknown error",
-        };
-      });
-
-    const lastProvider = failures[failures.length - 1]?.provider;
-    throw new CepProviderError(
-      cep,
-      (providers.find((provider) => provider === lastProvider) ??
-        providers[providers.length - 1] ??
-        DEFAULT_PROVIDER_ORDER[0]) as ProviderName,
-      failures,
-    );
-  }
-}
-
 /**
- * Normalizes a CEP by removing non-digit characters.
+ * Normalizes a CEP string by stripping all non-digit characters.
+ *
+ * @param value - The CEP string to normalize.
+ * @returns A digits-only string representing the normalized CEP.
+ * @throws {TypeError} If the provided value is not a string.
+ *
+ * @example
+ * ```TypeScript
+ * normalize("01001-000"); // "01001000"
+ * normalize("01.001-000"); // "01001000"
+ * ```
  */
-export function normalizeCep(value: string): string {
-  return normalize(value);
+export function normalize(value: string): string {
+  if (typeof value !== "string") {
+    throw new TypeError(
+      `Expected a string for CEP normalization, but received ${value === null ? "null" : typeof value}`,
+    );
+  }
+
+  return value.replace(/\D/g, "");
 }
 
 /**
- * Validates a CEP and returns a discriminated result.
+ * Validates a CEP string.
+ *
+ * @param value - CEP value to validate.
+ * @returns `{ success: true, error: null }` if valid; `{ success: false, error: CepValidationError }` if invalid.
+ * @throws {TypeError} If the provided value is not a string.
+ *
+ * @example
+ * ```TypeScript
+ * validate("01001-000"); // { success: true, error: null }
+ * validate("01001000"); // { success: true, error: null }
+ * validate("123"); // { success: false, error: CepValidationError }
+ * validate("01001-A00"); // { success: false, error: CepValidationError }
+ * ```
  */
 export function validate(value: string): CepValidationResult {
-  const normalizedCep = normalize(value);
+  if (typeof value !== "string") {
+    throw new TypeError(
+      `Expected a string for CEP validation, but received ${value === null ? "null" : typeof value}`,
+    );
+  }
 
   try {
-    validateCep(normalizedCep);
+    assertValid(value);
+
     return { success: true, error: null };
   } catch (error) {
     if (error instanceof CepValidationError) {
-      return { success: false, error: new CepValidationError(value) };
+      return { success: false, error };
     }
 
-    throw error;
+    return {
+      success: false,
+      error: new CepValidationError(
+        "UNKNOWN_ERROR",
+        "An unexpected error occurred during validation.",
+      ),
+    };
   }
 }
 
 /**
- * Formats CEP to XXXXX-XXX when the normalized value has exactly 8 digits.
+ * Formats a CEP string into the standard mask (`XXXXX-XXX`).
+ * CEP value (invalid, badly formatted, or not) returns as is.
+ *
+ * @param value - CEP value in any form.
+ * @param options - Optional formatting options. Set `pad` to `true` to
+ *   left-pad with zeros up to 8 characters.
+ * @returns The formatted CEP string or the original value if it doesn't have 8 digits.
+ * @throws {TypeError} If the provided value is not a string.
+ *
+ * @example
+ * ```TypeScript
+ * format("01001000"); // "01001-000"
+ * format("01001-000"); // "01001-000"
+ * format("123"); // "123"
+ * format("73450", { pad: true }); // "00073-450"
+ * ```
  */
-export function format(value: string): string {
-  const digits = normalize(value);
+export function format(value: string, options: CepFormatOptions = {}): string {
+  if (typeof value !== "string") {
+    throw new TypeError(
+      `Expected a string for CEP format, but received ${value === null ? "null" : typeof value}`,
+    );
+  }
 
-  if (digits.length !== 8) {
+  assertOptions(options);
+
+  const baseValue = options.pad ? value.padStart(CEP_LENGTH, "0") : value;
+
+  if (!CEP_RAW_PATTERN.test(baseValue)) {
     return value;
   }
 
-  return `${digits.slice(0, 5)}-${digits.slice(5)}`;
+  return `${baseValue.slice(0, 5)}-${baseValue.slice(5)}`;
 }
 
 /**
- * Progressively formats CEP while the user types.
+ * Progressively formats a CEP while typing using the pattern `XXXXX-XXX`.
+ *
+ * @param value - CEP value in any form.
+ * @returns A progressively formatted CEP string.
+ * @throws {TypeError} If the provided value is not a string.
+ *
+ * @example
+ * ```TypeScript
+ * formatAsYouType("0100"); // "0100"
+ * formatAsYouType("01001"); // "01001"
+ * formatAsYouType("010010"); // "01001-0"
+ * formatAsYouType("01001000"); // "01001-000"
+ * ```
  */
 export function formatAsYouType(value: string): string {
-  const digits = normalize(value).slice(0, 8);
-
-  if (digits.length <= 5) {
-    return digits;
+  if (typeof value !== "string") {
+    throw new TypeError(
+      `Expected a string for CEP format, but received ${value === null ? "null" : typeof value}`,
+    );
   }
 
-  return `${digits.slice(0, 5)}-${digits.slice(5)}`;
+  const normalized = normalize(value).slice(0, CEP_LENGTH);
+
+  return formatProgressive(normalized, [5, 3], ["-"]);
 }
 
 /**
- * Resolve a Brazilian CEP into a normalized address DTO using one or many providers.
+ * Resolves a Brazilian CEP into a normalized address DTO using one or multiple providers.
+ *
+ * @param value - The CEP string to resolve.
+ * @param options - Optional configuration for provider resolution, caching, timeout, and strategy.
+ * @returns A promise that resolves to the address details.
+ * @throws {TypeError} If the provided value is not a string.
+ * @throws {CepValidationError} If the CEP is invalid.
+ * @throws {CepNotFoundError} If the CEP is not found by the providers.
+ * @throws {CepProviderError} If all providers fail to respond.
+ *
+ * @example
+ * ```TypeScript
+ * await getAddress("01001-000"); // { cep: "01001000", state: "SP", city: "São Paulo", ... }
+ * await getAddress("01001-000", { strategy: "race", timeout: 2000 });
+ * ```
  */
 export async function getAddress(
   value: string,
   options: GetAddressOptions = {},
 ): Promise<AddressResponse> {
-  const normalizedCep = normalize(value);
-  validateCep(normalizedCep);
+  const validation = validate(value);
+
+  if (!validation.success) {
+    throw validation.error;
+  }
+
+  const normalized = normalize(value);
 
   const providers = options.providers ?? DEFAULT_PROVIDER_ORDER;
   const timeout = options.timeout ?? DEFAULT_TIMEOUT_MS;
   const strategy = options.strategy ?? "fallback";
 
   const cacheConfig = resolveCacheConfig(options.cache);
+
   if (cacheConfig.enabled) {
-    const cached = await cacheConfig.store.get(normalizedCep);
+    const cached = await cacheConfig.store.get(normalized);
     if (cached) {
       return cached;
     }
@@ -191,39 +194,52 @@ export async function getAddress(
 
   const response =
     strategy === "race"
-      ? await runRace(normalizedCep, providers, timeout)
-      : await runFallback(normalizedCep, providers, timeout);
+      ? await runRace(normalized, providers, timeout)
+      : await runFallback(normalized, providers, timeout);
 
   if (cacheConfig.enabled) {
-    await cacheConfig.store.set(normalizedCep, response, cacheConfig.ttl);
+    await cacheConfig.store.set(normalized, response, cacheConfig.ttl);
   }
 
   return response;
 }
 
 /**
- * Looks up a CEP and returns a non-throwing result shape for provider outcomes.
+ * Looks up a CEP and returns a non-throwing result object for provider outcomes.
+ *
+ * @param value - The CEP string to look up.
+ * @param options - Optional configuration for provider resolution, caching, timeout, and strategy.
+ * @returns A promise that resolves to a `CepLookupResult` detailing the lookup outcome (FOUND, NOT_FOUND, UNAVAILABLE).
+ * @throws {TypeError} If the provided value is not a string.
+ * @throws {CepValidationError} If the CEP is invalid.
+ *
+ * @example
+ * ```TypeScript
+ * await lookup("01001-000"); // { status: "FOUND", cep: "01001000", provider: "viacep", error: null }
+ * await lookup("99999-999"); // { status: "NOT_FOUND", cep: "99999999", provider: "...", error: CepNotFoundError }
+ * ```
  */
 export async function lookup(
   value: string,
   options: GetAddressOptions = {},
 ): Promise<CepLookupResult> {
   const validation = validate(value);
+
   if (!validation.success) {
     throw validation.error;
   }
 
-  const normalizedCep = normalize(value);
+  const normalized = normalize(value);
   const providers = options.providers ?? DEFAULT_PROVIDER_ORDER;
   const lastProvider = providers[providers.length - 1] ?? DEFAULT_PROVIDER_ORDER[0];
-
   const cacheConfig = resolveCacheConfig(options.cache);
+
   if (cacheConfig.enabled) {
-    const cached = await cacheConfig.store.get(normalizedCep);
+    const cached = await cacheConfig.store.get(normalized);
     if (cached) {
       return {
         status: "FOUND",
-        cep: normalizedCep,
+        cep: normalized,
         provider: cached.provider,
         error: null,
       };
@@ -231,11 +247,11 @@ export async function lookup(
   }
 
   try {
-    const response = await getAddress(normalizedCep, options);
+    const response = await getAddress(normalized, options);
 
     return {
       status: "FOUND",
-      cep: normalizedCep,
+      cep: normalized,
       provider: response.provider,
       error: null,
     };
@@ -243,7 +259,7 @@ export async function lookup(
     if (error instanceof CepNotFoundError) {
       return {
         status: "NOT_FOUND",
-        cep: normalizedCep,
+        cep: normalized,
         provider: error.provider ?? lastProvider,
         error,
       };
@@ -252,7 +268,7 @@ export async function lookup(
     if (error instanceof CepProviderError) {
       return {
         status: "UNAVAILABLE",
-        cep: normalizedCep,
+        cep: normalized,
         provider: error.provider ?? lastProvider,
         error,
       };

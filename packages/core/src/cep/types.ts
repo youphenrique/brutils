@@ -1,5 +1,11 @@
 import type { CepNotFoundError, CepProviderError, CepValidationError } from "./utils";
 
+export type CepErrorCode = "INVALID_FORMAT" | "REPEATED_DIGITS" | "UNKNOWN_ERROR";
+
+export type CepFormatOptions = {
+  pad?: boolean;
+};
+
 export const PROVIDERS = ["viacep", "brasilapi", "widenet"] as const;
 
 export type ProviderName = (typeof PROVIDERS)[number];

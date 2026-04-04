@@ -187,18 +187,11 @@ describe("CpfError", () => {
     expect(err).toBeInstanceOf(CpfError);
   });
 
-  it("has name CpfError", () => {
+  it("CpfError has its properties", () => {
     const err = new CpfError("INVALID_FORMAT");
     expect(err.name).toBe("CpfError");
-  });
-
-  it("stores the error code", () => {
-    const err = new CpfError("INVALID_CHECKSUM");
-    expect(err.code).toBe("INVALID_CHECKSUM");
-  });
-
-  it("uses code as default message when no message is provided", () => {
-    const err = new CpfError("INVALID_FORMAT");
+    expect(err.code).toBe("INVALID_FORMAT");
+    // uses code as default message when no message is provided
     expect(err.message).toBe("INVALID_FORMAT");
   });
 

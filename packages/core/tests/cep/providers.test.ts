@@ -1,9 +1,13 @@
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
-import { brasilapiProvider } from "../../src/cep/providers/brasilapi";
-import { viacepProvider } from "../../src/cep/providers/viacep";
-import { widenetProvider } from "../../src/cep/providers/widenet";
-import { ProviderNotFoundSignal, ProviderRequestError, resetThrottler } from "../../src/cep/utils";
+import { brasilapiProvider } from "../../src/cep/providers/brasilapi.ts";
+import { viacepProvider } from "../../src/cep/providers/viacep.ts";
+import { widenetProvider } from "../../src/cep/providers/widenet.ts";
+import {
+  ProviderNotFoundSignal,
+  ProviderRequestError,
+  resetThrottler,
+} from "../../src/cep/utils.ts";
 
 const originalFetch = globalThis.fetch;
 
@@ -32,6 +36,7 @@ describe("provider adapters", () => {
     ) as typeof fetch;
 
     const result = await viacepProvider.fetch("01310100", 100);
+
     expect(result.provider).toBe("viacep");
     expect(result.cep).toBe("01310100");
     expect(result.ibgeCode).toBe("3550308");
@@ -42,6 +47,7 @@ describe("provider adapters", () => {
     globalThis.fetch = vi.fn(
       async () => new Response(JSON.stringify({ status: 404, ok: false }), { status: 200 }),
     ) as typeof fetch;
+
     await expect(widenetProvider.fetch("00000000", 100)).rejects.toBeInstanceOf(
       ProviderNotFoundSignal,
     );
@@ -65,12 +71,14 @@ describe("provider adapters", () => {
     ) as typeof fetch;
 
     const result = await brasilapiProvider.fetch("01310100", 100);
+
     expect(result.provider).toBe("brasilapi");
     expect(result.cep).toBe("01310100");
   });
 
   it("converts http failures into ProviderRequestError", async () => {
     globalThis.fetch = vi.fn(async () => new Response(null, { status: 500 })) as typeof fetch;
+
     await expect(brasilapiProvider.fetch("01310100", 100)).rejects.toBeInstanceOf(
       ProviderRequestError,
     );
