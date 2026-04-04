@@ -6,7 +6,7 @@ export type CepFormatOptions = {
   pad?: boolean;
 };
 
-export const PROVIDERS = ["viacep", "brasilapi", "widenet"] as const;
+export const PROVIDERS = ["viacep", "brasilapi", "apicep"] as const;
 
 export type ProviderName = (typeof PROVIDERS)[number];
 

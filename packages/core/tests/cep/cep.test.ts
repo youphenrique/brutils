@@ -322,7 +322,7 @@ describe("cep.lookup", () => {
 
   it("forwards options unchanged to getAddress", async () => {
     const options: GetAddressOptions = {
-      providers: ["widenet"],
+      providers: ["apicep"],
       strategy: "race" as const,
       timeout: 2500,
       cache: { ttl: 10 },
@@ -345,9 +345,9 @@ describe("cep.lookup", () => {
 
     const result = await cep.lookup("60740380", options);
 
-    expect(result.provider).toBe("widenet");
+    expect(result.provider).toBe("apicep");
     expect(globalThis.fetch).toHaveBeenCalledWith(
-      expect.stringContaining("widenet"),
+      expect.stringContaining("apicep"),
       expect.any(Object),
     );
   });

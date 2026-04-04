@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { brasilapiProvider } from "../../src/cep/providers/brasilapi.ts";
 import { viacepProvider } from "../../src/cep/providers/viacep.ts";
-import { widenetProvider } from "../../src/cep/providers/widenet.ts";
+import { apicepProvider } from "../../src/cep/providers/apicep.ts";
 import {
   CepProviderNotFoundSignal,
   CepProviderRequestError,
@@ -43,12 +43,12 @@ describe("cep provider adapters", () => {
     expect(result.ddd).toBe("11");
   });
 
-  it("detects widenet not-found", async () => {
+  it("detects apicep not-found", async () => {
     globalThis.fetch = vi.fn(
       async () => new Response(JSON.stringify({ status: 404, ok: false }), { status: 200 }),
     ) as typeof fetch;
 
-    await expect(widenetProvider.fetch("00000000", 100)).rejects.toBeInstanceOf(
+    await expect(apicepProvider.fetch("00000000", 100)).rejects.toBeInstanceOf(
       CepProviderNotFoundSignal,
     );
   });

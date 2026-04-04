@@ -8,7 +8,7 @@ import {
 } from "../utils";
 import { format } from "../cep";
 
-type WidenetResponse = {
+type ApicepResponse = {
   code?: string;
   state?: string;
   city?: string;
@@ -18,10 +18,10 @@ type WidenetResponse = {
   ok?: boolean;
 };
 
-export const widenetProvider: CepProvider = {
-  name: "widenet",
+export const apicepProvider: CepProvider = {
+  name: "apicep",
   async fetch(cep, timeout) {
-    await throttleProvider("widenet");
+    await throttleProvider("apicep");
 
     let response: Response;
 
@@ -30,7 +30,7 @@ export const widenetProvider: CepProvider = {
       response = await unfetch(`https://cdn.apicep.com/file/apicep/${formattedCep}.json`, timeout);
     } catch (error) {
       throw new CepProviderRequestError(
-        "widenet",
+        "apicep",
         error instanceof Error ? error.message : "Unknown error",
       );
     }
@@ -40,10 +40,10 @@ export const widenetProvider: CepProvider = {
     }
 
     if (!response.ok) {
-      throw new CepProviderRequestError("widenet", `HTTP ${response.status}`);
+      throw new CepProviderRequestError("apicep", `HTTP ${response.status}`);
     }
 
-    const data = (await response.json()) as WidenetResponse;
+    const data = (await response.json()) as ApicepResponse;
 
     if (!data.ok || data.status === 404 || data.code === undefined) {
       throw new CepProviderNotFoundSignal();
@@ -56,7 +56,7 @@ export const widenetProvider: CepProvider = {
       city: data.city ?? "",
       uf: data.state ?? "",
       state: getByCode(data.state ?? "")?.name ?? "",
-      provider: "widenet",
+      provider: "apicep",
     };
   },
 };

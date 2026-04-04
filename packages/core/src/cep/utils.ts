@@ -170,7 +170,7 @@ class TokenBucket {
 
 let throttlers: Record<ProviderName, TokenBucket> = {
   viacep: new TokenBucket(PROVIDER_THROTTLE.viacep.rps),
-  widenet: new TokenBucket(PROVIDER_THROTTLE.widenet.rps),
+  apicep: new TokenBucket(PROVIDER_THROTTLE.apicep.rps),
   brasilapi: new TokenBucket(PROVIDER_THROTTLE.brasilapi.rps),
 };
 
@@ -183,7 +183,7 @@ export function resetThrottler(): void {
 
   throttlers = {
     viacep: new TokenBucket(PROVIDER_THROTTLE.viacep.rps),
-    widenet: new TokenBucket(PROVIDER_THROTTLE.widenet.rps),
+    apicep: new TokenBucket(PROVIDER_THROTTLE.apicep.rps),
     brasilapi: new TokenBucket(PROVIDER_THROTTLE.brasilapi.rps),
   };
 }
