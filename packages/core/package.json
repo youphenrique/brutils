@@ -30,11 +30,9 @@
   },
   "devDependencies": {
     "@types/node": "^25.3.5",
-    "@typescript/native-preview": "7.0.0-dev.20260325.1",
-    "bumpp": "^10.4.1",
-    "typescript": "^5.9.3",
-    "vite": "catalog:",
-    "vite-plus": "catalog:",
-    "vitest": "catalog:"
+    "@typescript/native-preview": "7.0.0-dev.20260505.1",
+    "bumpp": "^11.0.1",
+    "typescript": "^6.0.3",
+    "vite-plus": "catalog:"
   }
 }

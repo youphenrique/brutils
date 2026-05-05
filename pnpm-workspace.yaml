@@ -6,9 +6,9 @@ packages:
 catalog:
   "@types/node": ^24
   typescript: ^5
-  vite: npm:@voidzero-dev/vite-plus-core@0.1.15
-  vite-plus: ^0.1.15
-  vitest: npm:@voidzero-dev/vite-plus-test@0.1.15
+  vite: npm:@voidzero-dev/vite-plus-core@0.1.20
+  vite-plus: ^0.1.20
+  vitest: npm:@voidzero-dev/vite-plus-test@0.1.20
 
 catalogMode: prefer
 overrides:
