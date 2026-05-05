@@ -1,12 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { cep } from "../../src/index.ts";
-import {
-  CepNotFoundError,
-  CepProviderError,
-  CepValidationError,
-  type GetAddressOptions,
-} from "../../src/cep/index.ts";
+import { CepNotFoundError, CepProviderError, CepValidationError } from "../../src/cep/index.ts";
 
 const originalFetch = globalThis.fetch;
 
@@ -262,122 +257,6 @@ describe("cep.getAddress", () => {
     await expect(
       cep.getAddress("01310100", { providers: ["viacep"], timeout: 10 }),
     ).rejects.toBeInstanceOf(cep.CepProviderError);
-  });
-});
-
-describe("cep.lookup", () => {
-  it("throws validation error synchronously and does not call getAddress", async () => {
-    globalThis.fetch = vi.fn();
-
-    await expect(cep.lookup("123")).rejects.toBeInstanceOf(cep.CepValidationError);
-    expect(globalThis.fetch).not.toHaveBeenCalled();
-  });
-
-  it("maps successful lookup to FOUND", async () => {
-    globalThis.fetch = vi.fn().mockResolvedValue(
-      new Response(
-        JSON.stringify({
-          cep: "54490-120",
-          logradouro: "Rua Cubatão",
-          bairro: "Barra de Jangada",
-          localidade: "Jaboatão dos Guararapes",
-          uf: "PE",
-          estado: "Pernambuco",
-          ibge: "2607901",
-          ddd: "81",
-        }),
-        { status: 200 },
-      ),
-    );
-
-    await expect(cep.lookup("54490120")).resolves.toEqual({
-      status: "FOUND",
-      cep: "54490120",
-      provider: "viacep",
-      error: null,
-    });
-  });
-
-  it("maps not found errors to NOT_FOUND without throwing", async () => {
-    globalThis.fetch = vi
-      .fn()
-      .mockResolvedValue(new Response(JSON.stringify({ erro: true }), { status: 200 }));
-
-    await expect(cep.lookup("60740380", { providers: ["viacep"] })).resolves.toMatchObject({
-      status: "NOT_FOUND",
-      cep: "60740380",
-      provider: "viacep",
-    });
-  });
-
-  it("maps provider errors to UNAVAILABLE without throwing", async () => {
-    globalThis.fetch = vi.fn().mockRejectedValue(new Error("Network error"));
-
-    await expect(cep.lookup("60740380", { providers: ["brasilapi"] })).resolves.toMatchObject({
-      status: "UNAVAILABLE",
-      cep: "60740380",
-      provider: "brasilapi",
-    });
-  });
-
-  it("forwards options unchanged to getAddress", async () => {
-    const options: GetAddressOptions = {
-      providers: ["apicep"],
-      strategy: "race" as const,
-      timeout: 2500,
-      cache: { ttl: 10 },
-    };
-
-    globalThis.fetch = vi.fn().mockResolvedValue(
-      new Response(
-        JSON.stringify({
-          code: "60740-380",
-          state: "CE",
-          city: "Fortaleza",
-          district: "Itaoca",
-          address: "Rua Outono",
-          status: 200,
-          ok: true,
-        }),
-        { status: 200 },
-      ),
-    );
-
-    const result = await cep.lookup("60740380", options);
-
-    expect(result.provider).toBe("apicep");
-    expect(globalThis.fetch).toHaveBeenCalledWith(
-      expect.stringContaining("apicep"),
-      expect.any(Object),
-    );
-  });
-
-  it("returns cache hit without calling getAddress", async () => {
-    const store = {
-      get: vi.fn().mockResolvedValue({
-        cep: "60740380",
-        street: "Rua A",
-        neighborhood: "Centro",
-        city: "Fortaleza",
-        uf: "CE",
-        state: "Ceará",
-        provider: "viacep" as const,
-      }),
-      set: vi.fn(),
-    };
-
-    globalThis.fetch = vi.fn();
-
-    const result = await cep.lookup("60740380", { cache: { store } });
-
-    expect(result).toEqual({ status: "FOUND", cep: "60740380", provider: "viacep", error: null });
-    expect(globalThis.fetch).not.toHaveBeenCalled();
-  });
-
-  it("throws for edge-case input types", async () => {
-    await expect(cep.lookup(null as unknown as string)).rejects.toBeInstanceOf(TypeError);
-    await expect(cep.lookup(undefined as unknown as string)).rejects.toBeInstanceOf(TypeError);
-    await expect(cep.lookup(60740380 as unknown as string)).rejects.toBeInstanceOf(TypeError);
   });
 });
 

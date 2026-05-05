@@ -10,7 +10,7 @@ import type { ListOptions, UF } from "./types";
  * @returns An array of UF objects.
  *
  * @example
- * ```typescript
+ * ```ts
  * ufs.list();
  * ufs.list({ region: "NE" });
  * ufs.list({ sortBy: "name" });
@@ -52,7 +52,7 @@ export function list(options?: ListOptions): UF[] {
  * @returns The matching UF object, or null if not found.
  *
  * @example
- * ```typescript
+ * ```ts
  * ufs.getByCode("SP"); // Returns São Paulo UF object
  * ufs.getByCode("sp"); // Returns São Paulo UF object
  * ```
@@ -81,7 +81,7 @@ export function getByCode(code: string): UF | null {
  * @returns The matching UF object, or null if not found.
  *
  * @example
- * ```typescript
+ * ```ts
  * ufs.getByName("São Paulo"); // Returns São Paulo UF object
  * ufs.getByName("sao paulo"); // Returns São Paulo UF object
  * ```

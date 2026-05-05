@@ -1,5 +1,5 @@
 export { PROVIDERS } from "./types";
-export { format, formatAsYouType, getAddress, lookup, normalize, validate } from "./cep";
+export { format, formatAsYouType, getAddress, normalize, validate } from "./cep";
 export {
   CepValidationError,
   CepNotFoundError,
@@ -7,10 +7,4 @@ export {
   clearCache,
   resetThrottler,
 } from "./utils";
-export type {
-  AddressResponse,
-  CacheStore,
-  CepLookupResult,
-  CepValidationResult,
-  GetAddressOptions,
-} from "./types";
+export type { AddressResponse, CacheStore, CepValidationResult, GetAddressOptions } from "./types";

@@ -1,4 +1,4 @@
-import type { CepNotFoundError, CepProviderError, CepValidationError } from "./utils";
+import type { CepValidationError } from "./utils";
 
 export type CepErrorCode = "INVALID_FORMAT" | "REPEATED_DIGITS" | "UNKNOWN_ERROR";
 
@@ -37,8 +37,3 @@ export interface GetAddressOptions {
 export type CepValidationResult =
   | { success: true; error: null }
   | { success: false; error: CepValidationError };
-
-export type CepLookupResult =
-  | { status: "FOUND"; cep: string; provider: ProviderName; error: null }
-  | { status: "NOT_FOUND"; cep: string; provider: ProviderName; error: CepNotFoundError }
-  | { status: "UNAVAILABLE"; cep: string; provider: ProviderName; error: CepProviderError };

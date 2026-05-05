@@ -9,19 +9,10 @@ import {
 import type {
   AddressResponse,
   CepFormatOptions,
-  CepLookupResult,
   CepValidationResult,
   GetAddressOptions,
 } from "./types";
-import {
-  assertValid,
-  CepNotFoundError,
-  CepProviderError,
-  CepValidationError,
-  resolveCacheConfig,
-  runFallback,
-  runRace,
-} from "./utils";
+import { assertValid, CepValidationError, resolveCacheConfig, runFallback, runRace } from "./utils";
 
 /**
  * Normalizes a CEP string by stripping all non-digit characters.
@@ -202,78 +193,4 @@ export async function getAddress(
   }
 
   return response;
-}
-
-/**
- * Looks up a CEP and returns a non-throwing result object for provider outcomes.
- *
- * @param value - The CEP string to look up.
- * @param options - Optional configuration for provider resolution, caching, timeout, and strategy.
- * @returns A promise that resolves to a `CepLookupResult` detailing the lookup outcome (FOUND, NOT_FOUND, UNAVAILABLE).
- * @throws {TypeError} If the provided value is not a string.
- * @throws {CepValidationError} If the CEP is invalid.
- *
- * @example
- * ```TypeScript
- * await lookup("01001-000"); // { status: "FOUND", cep: "01001000", provider: "viacep", error: null }
- * await lookup("99999-999"); // { status: "NOT_FOUND", cep: "99999999", provider: "...", error: CepNotFoundError }
- * ```
- */
-export async function lookup(
-  value: string,
-  options: GetAddressOptions = {},
-): Promise<CepLookupResult> {
-  const validation = validate(value);
-
-  if (!validation.success) {
-    throw validation.error;
-  }
-
-  const normalized = normalize(value);
-  const providers = options.providers ?? DEFAULT_PROVIDER_ORDER;
-  const lastProvider = providers[providers.length - 1] ?? DEFAULT_PROVIDER_ORDER[0];
-  const cacheConfig = resolveCacheConfig(options.cache);
-
-  if (cacheConfig.enabled) {
-    const cached = await cacheConfig.store.get(normalized);
-    if (cached) {
-      return {
-        status: "FOUND",
-        cep: normalized,
-        provider: cached.provider,
-        error: null,
-      };
-    }
-  }
-
-  try {
-    const response = await getAddress(normalized, options);
-
-    return {
-      status: "FOUND",
-      cep: normalized,
-      provider: response.provider,
-      error: null,
-    };
-  } catch (error) {
-    if (error instanceof CepNotFoundError) {
-      return {
-        status: "NOT_FOUND",
-        cep: normalized,
-        provider: error.provider ?? lastProvider,
-        error,
-      };
-    }
-
-    if (error instanceof CepProviderError) {
-      return {
-        status: "UNAVAILABLE",
-        cep: normalized,
-        provider: error.provider ?? lastProvider,
-        error,
-      };
-    }
-
-    throw error;
-  }
 }
