@@ -1,5 +1,5 @@
-import { assertOptions } from "../_shared/assert-options";
-import { formatProgressive } from "../_shared/progressive-format";
+import { assertOptions } from "../../common/assert-options";
+import { formatProgressive } from "../../common/progressive-format";
 import {
   CEP_LENGTH,
   CEP_RAW_PATTERN,

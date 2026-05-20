@@ -1,13 +1,13 @@
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
-import { brasilapiProvider } from "../../src/cep/providers/brasilapi.ts";
-import { viacepProvider } from "../../src/cep/providers/viacep.ts";
-import { apicepProvider } from "../../src/cep/providers/apicep.ts";
+import { brasilapiProvider } from "../../src/utilities/cep/providers/brasilapi.ts";
+import { viacepProvider } from "../../src/utilities/cep/providers/viacep.ts";
+import { apicepProvider } from "../../src/utilities/cep/providers/apicep.ts";
 import {
   CepProviderNotFoundSignal,
   CepProviderRequestError,
   resetThrottler,
-} from "../../src/cep/utils.ts";
+} from "../../src/utilities/cep/utils.ts";
 
 const originalFetch = globalThis.fetch;
 

@@ -1,5 +1,5 @@
-import { assertOptions } from "../_shared/assert-options";
-import { formatProgressive } from "../_shared/progressive-format";
+import { assertOptions } from "../../common/assert-options";
+import { formatProgressive } from "../../common/progressive-format";
 import { CPF_LENGTH, CPF_RAW_PATTERN, UFS_REGION_MAP } from "./constants";
 import { CpfError, randomDigit, computeCheckDigit, assertValid } from "./utils";
 import type { CpfFormatOptions, CpfGenerateOptions, CpfValidateResult } from "./types";

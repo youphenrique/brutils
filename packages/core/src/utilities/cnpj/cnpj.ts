@@ -1,5 +1,5 @@
-import { assertOptions } from "../_shared/assert-options";
-import { formatProgressive } from "../_shared/progressive-format";
+import { assertOptions } from "../../common/assert-options";
+import { formatProgressive } from "../../common/progressive-format";
 import { ALPHANUMERIC_CHARS, DIGIT_CHARS, CNPJ_LENGTH, CNPJ_RAW_PATTERN } from "./constants";
 import { assertValid, calcCheckDigits, CnpjError } from "./utils";
 import type { CnpjFormatOptions, CnpjGenerateOptions, CnpjValidateResult } from "./types";

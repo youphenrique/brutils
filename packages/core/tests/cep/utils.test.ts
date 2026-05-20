@@ -1,12 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
-import type { AddressResponse } from "../../src/cep/index.ts";
+import type { AddressResponse } from "../../src/utilities/cep/index.ts";
 import {
   clearCache,
   resetThrottler,
   resolveCacheConfig,
   throttleProvider,
-} from "../../src/cep/utils.ts";
+} from "../../src/utilities/cep/utils.ts";
 
 describe("cep cache helpers", () => {
   afterEach(() => {
