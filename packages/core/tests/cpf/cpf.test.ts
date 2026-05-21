@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vite-plus/test";
 
 import { cpf } from "../../src/index.ts";
-import { CpfError } from "../../src/utilities/cpf/index.ts";
+import { CpfError, CpfMaskInputError, CpfMaskOptionsError } from "../../src/utilities/cpf/index.ts";
 
 describe("cpf.normalize", () => {
   it("strips non-digit characters from a formatted CPF", () => {
@@ -32,40 +32,256 @@ describe("cpf.normalize", () => {
 });
 
 describe("cpf.mask", () => {
-  it("masks a normalized CPF correctly", () => {
+  // --- Default behavior ---
+
+  it("masks a raw CPF using default options", () => {
+    expect(cpf.mask("29650899006")).toBe("296.***.***-06");
     expect(cpf.mask("91653478039")).toBe("916.***.***-39");
+    expect(cpf.mask("52263944621")).toBe("522.***.***-21");
   });
 
-  it("masks a formatted CPF correctly", () => {
+  it("masks a pre-formatted CPF using default options", () => {
+    expect(cpf.mask("296.508.990-06")).toBe("296.***.***-06");
     expect(cpf.mask("916.534.780-39")).toBe("916.***.***-39");
+    expect(cpf.mask("522.639.446-21")).toBe("522.***.***-21");
   });
 
-  it("masks partially formatted and mixed inputs correctly", () => {
-    expect(cpf.mask("abc916!!!534...780--39def")).toBe("916.***.***-39");
+  it("always returns the canonical XXX.XXX.XXX-XX format", () => {
+    expect(cpf.mask("29650899006")).toMatch(/^\d{3}\.\*{3}\.\*{3}-\d{2}$/);
   });
 
-  it("returns an empty string for an empty input", () => {
-    expect(cpf.mask("")).toBe("");
+  // --- Custom options ---
+
+  it("applies a custom mask char", () => {
+    expect(cpf.mask("29650899006", { char: "#" })).toBe("296.###.###-06");
+    expect(cpf.mask("29650899006", { char: "X" })).toBe("296.XXX.XXX-06");
+    expect(cpf.mask("29650899006", { char: "🔒" })).toBe("296.🔒🔒🔒.🔒🔒🔒-06");
   });
 
-  it("handles short inputs progressively", () => {
-    expect(cpf.mask("12")).toBe("12");
-    expect(cpf.mask("1234")).toBe("123.*");
-    expect(cpf.mask("123456")).toBe("123.***");
-    expect(cpf.mask("1234567")).toBe("123.***.*");
-    expect(cpf.mask("1234567890")).toBe("123.***.***-0");
+  it("applies custom visiblePrefixLength", () => {
+    expect(cpf.mask("29650899006", { visiblePrefixLength: 0 })).toBe("***.***.***-06");
+    expect(cpf.mask("29650899006", { visiblePrefixLength: 6 })).toBe("296.508.***-06");
+    expect(cpf.mask("29650899006", { visiblePrefixLength: 9, visibleSuffixLength: 0 })).toBe(
+      "296.508.990-**",
+    );
   });
 
-  it("truncates input to 11 characters if longer", () => {
-    expect(cpf.mask("241550840318")).toBe("241.***.***-31");
-    expect(cpf.mask("916.534.780-39621")).toBe("916.***.***-39");
+  it("applies custom visibleSuffixLength", () => {
+    expect(cpf.mask("29650899006", { visibleSuffixLength: 0 })).toBe("296.***.***-**");
+    expect(cpf.mask("29650899006", { visibleSuffixLength: 5 })).toBe("296.***.990-06");
+    expect(cpf.mask("29650899006", { visiblePrefixLength: 0, visibleSuffixLength: 8 })).toBe(
+      "***.508.990-06",
+    );
   });
 
-  it("throws a TypeError for invalid type input", () => {
+  it("masks all digits when both visible lengths are 0", () => {
+    expect(cpf.mask("29650899006", { visiblePrefixLength: 0, visibleSuffixLength: 0 })).toBe(
+      "***.***.***-**",
+    );
+  });
+
+  it("combines custom char with custom visible lengths", () => {
+    expect(
+      cpf.mask("29650899006", { char: "#", visiblePrefixLength: 3, visibleSuffixLength: 2 }),
+    ).toBe("296.###.###-06");
+  });
+
+  it("accepts undefined options and applies defaults", () => {
+    expect(cpf.mask("29650899006", undefined)).toBe("296.***.***-06");
+  });
+
+  // --- Input validation errors ---
+
+  it("throws CpfMaskInputError INVALID_INPUT for chars other than digits, dots, and dashes", () => {
+    const assertInvalidInput = (value: string) => {
+      const err = (() => {
+        try {
+          cpf.mask(value);
+        } catch (e) {
+          return e;
+        }
+      })();
+      expect(err).toBeInstanceOf(CpfMaskInputError);
+      expect((err as CpfMaskInputError).code).toBe("INVALID_INPUT");
+    };
+
+    assertInvalidInput("296abc50899006");
+    assertInvalidInput("296#50899006");
+    assertInvalidInput("abc916!!!534...780--39def");
+    assertInvalidInput("29650 89900 6");
+    assertInvalidInput("296.508.990+06");
+  });
+
+  it("throws CpfMaskInputError INVALID_LENGTH for sanitized input shorter than 11 digits", () => {
+    const assertInvalidLength = (value: string) => {
+      const err = (() => {
+        try {
+          cpf.mask(value);
+        } catch (e) {
+          return e;
+        }
+      })();
+      expect(err).toBeInstanceOf(CpfMaskInputError);
+      expect((err as CpfMaskInputError).code).toBe("INVALID_LENGTH");
+    };
+
+    assertInvalidLength("");
+    assertInvalidLength("2965089900");
+    assertInvalidLength("123");
+    assertInvalidLength("12");
+    assertInvalidLength("1234567890");
+  });
+
+  it("throws CpfMaskInputError INVALID_LENGTH for sanitized input longer than 11 digits", () => {
+    expect(() => cpf.mask("296508990061")).toThrow(CpfMaskInputError);
+    expect(() => cpf.mask("241550840318")).toThrow(CpfMaskInputError);
+
+    try {
+      cpf.mask("296508990061");
+    } catch (e) {
+      expect((e as CpfMaskInputError).code).toBe("INVALID_LENGTH");
+    }
+  });
+
+  // --- Options validation errors ---
+
+  it("throws CpfMaskOptionsError INVALID_MASK_CHAR for invalid char values", () => {
+    const assertInvalidChar = (char: unknown) => {
+      const err = (() => {
+        try {
+          cpf.mask("29650899006", { char: char as string });
+        } catch (e) {
+          return e;
+        }
+      })();
+      expect(err).toBeInstanceOf(CpfMaskOptionsError);
+      expect((err as CpfMaskOptionsError).code).toBe("INVALID_MASK_CHAR");
+    };
+
+    assertInvalidChar("");
+    assertInvalidChar("**");
+    assertInvalidChar("ab");
+    assertInvalidChar(42 as unknown as string);
+    assertInvalidChar(null as unknown as string);
+  });
+
+  it("accepts valid single-codepoint emoji as char", () => {
+    expect(() => cpf.mask("29650899006", { char: "🔒" })).not.toThrow();
+    expect(() => cpf.mask("29650899006", { char: "★" })).not.toThrow();
+  });
+
+  it("throws CpfMaskOptionsError INVALID_VISIBLE_PREFIX_LENGTH for invalid prefix values", () => {
+    const assertInvalidPrefix = (v: unknown) => {
+      const err = (() => {
+        try {
+          cpf.mask("29650899006", { visiblePrefixLength: v as number });
+        } catch (e) {
+          return e;
+        }
+      })();
+      expect(err).toBeInstanceOf(CpfMaskOptionsError);
+      expect((err as CpfMaskOptionsError).code).toBe("INVALID_VISIBLE_PREFIX_LENGTH");
+    };
+
+    assertInvalidPrefix(-1);
+    assertInvalidPrefix(1.5);
+    assertInvalidPrefix(NaN);
+    assertInvalidPrefix(Infinity);
+    assertInvalidPrefix(-Infinity);
+  });
+
+  it("throws CpfMaskOptionsError INVALID_VISIBLE_SUFFIX_LENGTH for invalid suffix values", () => {
+    const assertInvalidSuffix = (v: unknown) => {
+      const err = (() => {
+        try {
+          cpf.mask("29650899006", { visibleSuffixLength: v as number });
+        } catch (e) {
+          return e;
+        }
+      })();
+      expect(err).toBeInstanceOf(CpfMaskOptionsError);
+      expect((err as CpfMaskOptionsError).code).toBe("INVALID_VISIBLE_SUFFIX_LENGTH");
+    };
+
+    assertInvalidSuffix(-1);
+    assertInvalidSuffix(0.1);
+    assertInvalidSuffix(NaN);
+    assertInvalidSuffix(Infinity);
+    assertInvalidSuffix(-Infinity);
+  });
+
+  it("throws CpfMaskOptionsError VISIBLE_LENGTH_OVERFLOW when prefix + suffix >= 11", () => {
+    const assertOverflow = (opts: { visiblePrefixLength: number; visibleSuffixLength: number }) => {
+      const err = (() => {
+        try {
+          cpf.mask("29650899006", opts);
+        } catch (e) {
+          return e;
+        }
+      })();
+      expect(err).toBeInstanceOf(CpfMaskOptionsError);
+      expect((err as CpfMaskOptionsError).code).toBe("VISIBLE_LENGTH_OVERFLOW");
+    };
+
+    assertOverflow({ visiblePrefixLength: 11, visibleSuffixLength: 0 });
+    assertOverflow({ visiblePrefixLength: 0, visibleSuffixLength: 11 });
+    assertOverflow({ visiblePrefixLength: 6, visibleSuffixLength: 5 });
+    assertOverflow({ visiblePrefixLength: 5, visibleSuffixLength: 6 });
+    assertOverflow({ visiblePrefixLength: 9, visibleSuffixLength: 9 });
+  });
+
+  it("does not throw VISIBLE_LENGTH_OVERFLOW for prefix + suffix = 10", () => {
+    expect(() =>
+      cpf.mask("29650899006", { visiblePrefixLength: 9, visibleSuffixLength: 1 }),
+    ).not.toThrow();
+    expect(() =>
+      cpf.mask("29650899006", { visiblePrefixLength: 1, visibleSuffixLength: 9 }),
+    ).not.toThrow();
+  });
+
+  // --- TypeError for non-string / non-object inputs ---
+
+  it("throws a TypeError for non-string value", () => {
     expect(() => cpf.mask(null as any)).toThrow(TypeError);
     expect(() => cpf.mask(undefined as any)).toThrow(TypeError);
     expect(() => cpf.mask(12345678909 as any)).toThrow(TypeError);
     expect(() => cpf.mask({} as any)).toThrow(TypeError);
+  });
+
+  it("throws a TypeError for invalid options type", () => {
+    expect(() => cpf.mask("29650899006", null as any)).toThrow(TypeError);
+    expect(() => cpf.mask("29650899006", 123 as any)).toThrow(TypeError);
+    expect(() => cpf.mask("29650899006", [] as any)).toThrow(TypeError);
+  });
+
+  // --- Error class shape ---
+
+  it("CpfMaskInputError has the correct shape", () => {
+    const err = new CpfMaskInputError("INVALID_INPUT");
+    expect(err).toBeInstanceOf(Error);
+    expect(err).toBeInstanceOf(CpfMaskInputError);
+    expect(err.name).toBe("CpfMaskInputError");
+    expect(err.code).toBe("INVALID_INPUT");
+    expect(err.message).toBe("INVALID_INPUT");
+  });
+
+  it("CpfMaskInputError uses a custom message when provided", () => {
+    const err = new CpfMaskInputError("INVALID_LENGTH", "Custom message");
+    expect(err.message).toBe("Custom message");
+  });
+
+  it("CpfMaskOptionsError has the correct shape", () => {
+    const err = new CpfMaskOptionsError("INVALID_MASK_CHAR");
+    expect(err).toBeInstanceOf(Error);
+    expect(err).toBeInstanceOf(CpfMaskOptionsError);
+    expect(err.name).toBe("CpfMaskOptionsError");
+    expect(err.code).toBe("INVALID_MASK_CHAR");
+    expect(err.message).toBe("INVALID_MASK_CHAR");
+  });
+
+  it("CpfMaskOptionsError uses a custom message when provided", () => {
+    const err = new CpfMaskOptionsError("VISIBLE_LENGTH_OVERFLOW", "Custom message");
+    expect(err.message).toBe("Custom message");
   });
 });
 

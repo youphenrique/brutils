@@ -1,4 +1,4 @@
 export * from "./types";
 export * from "./cpf";
-export { CpfError } from "./utils";
+export { CpfError, CpfMaskInputError, CpfMaskOptionsError } from "./utils";
 export * from "./constants";

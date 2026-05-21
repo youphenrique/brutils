@@ -1,4 +1,4 @@
-import type { CpfErrorCode } from "./types";
+import type { CpfErrorCode, CpfMaskInputErrorCode, CpfMaskOptionsErrorCode } from "./types";
 import { CPF_FORMATTED_PATTERN, CPF_RAW_PATTERN } from "./constants";
 
 export class CpfError extends Error {
@@ -8,6 +8,26 @@ export class CpfError extends Error {
   ) {
     super(message ?? code);
     this.name = "CpfError";
+  }
+}
+
+export class CpfMaskInputError extends Error {
+  constructor(
+    readonly code: CpfMaskInputErrorCode,
+    message?: string,
+  ) {
+    super(message ?? code);
+    this.name = "CpfMaskInputError";
+  }
+}
+
+export class CpfMaskOptionsError extends Error {
+  constructor(
+    readonly code: CpfMaskOptionsErrorCode,
+    message?: string,
+  ) {
+    super(message ?? code);
+    this.name = "CpfMaskOptionsError";
   }
 }
 

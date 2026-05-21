@@ -1,8 +1,134 @@
 import { assertOptions } from "../../common/assert-options";
 import { formatProgressive } from "../../common/progressive-format";
 import { CPF_LENGTH, CPF_RAW_PATTERN, UFS_REGION_MAP } from "./constants";
-import { CpfError, randomDigit, computeCheckDigit, assertValid } from "./utils";
-import type { CpfFormatOptions, CpfGenerateOptions, CpfValidateResult } from "./types";
+import {
+  CpfError,
+  CpfMaskInputError,
+  CpfMaskOptionsError,
+  randomDigit,
+  computeCheckDigit,
+  assertValid,
+} from "./utils";
+import type {
+  CpfFormatOptions,
+  CpfGenerateOptions,
+  CpfMaskOptions,
+  CpfValidateResult,
+} from "./types";
+
+const CPF_MASK_CHAR_DEFAULT = "*";
+const CPF_MASK_VISIBLE_PREFIX_DEFAULT = 3;
+const CPF_MASK_VISIBLE_SUFFIX_DEFAULT = 2;
+
+/** Strips the standard CPF separator characters (`.` and `-`) from a string. */
+function stripSeparators(value: string): string {
+  return value.replaceAll(".", "").replaceAll("-", "");
+}
+
+/**
+ * Sanitizes and validates raw `mask()` input.
+ * Accepts only characters that are digits, `.`, or `-`.
+ * After stripping separators, the result must be exactly 11 digits.
+ *
+ * @throws {CpfMaskInputError} `INVALID_INPUT` if non-separator, non-digit chars are present.
+ * @throws {CpfMaskInputError} `INVALID_LENGTH` if the sanitized string is not 11 digits long.
+ */
+function normalizeMaskInput(value: string): string {
+  const stripped = stripSeparators(value);
+
+  if (/\D/.test(stripped)) {
+    throw new CpfMaskInputError(
+      "INVALID_INPUT",
+      "CPF input may only contain digits, dots (.), and dashes (-).",
+    );
+  }
+
+  if (stripped.length !== CPF_LENGTH) {
+    throw new CpfMaskInputError(
+      "INVALID_LENGTH",
+      `CPF input must contain exactly ${CPF_LENGTH} digits after stripping separators, got ${stripped.length}.`,
+    );
+  }
+
+  return stripped;
+}
+
+/**
+ * Validates the `CpfMaskOptions` object and returns fully-resolved option values.
+ *
+ * @throws {CpfMaskOptionsError} `INVALID_MASK_CHAR` – char is not a single grapheme.
+ * @throws {CpfMaskOptionsError} `INVALID_VISIBLE_PREFIX_LENGTH` – prefix length is not a non-negative integer.
+ * @throws {CpfMaskOptionsError} `INVALID_VISIBLE_SUFFIX_LENGTH` – suffix length is not a non-negative integer.
+ * @throws {CpfMaskOptionsError} `VISIBLE_LENGTH_OVERFLOW` – prefix + suffix would expose all CPF digits.
+ */
+function assertMaskOptions(options: CpfMaskOptions): Required<CpfMaskOptions> {
+  const {
+    char = CPF_MASK_CHAR_DEFAULT,
+    visiblePrefixLength = CPF_MASK_VISIBLE_PREFIX_DEFAULT,
+    visibleSuffixLength = CPF_MASK_VISIBLE_SUFFIX_DEFAULT,
+  } = options;
+
+  // `[...char].length === 1` is the validation strategy for single graphemes.
+  // eslint-disable-next-line no-misused-spread
+  if (typeof char !== "string" || [...char].length !== 1) {
+    throw new CpfMaskOptionsError(
+      "INVALID_MASK_CHAR",
+      "The `char` option must be a string representing exactly one Unicode grapheme.",
+    );
+  }
+
+  if (!Number.isInteger(visiblePrefixLength) || visiblePrefixLength < 0) {
+    throw new CpfMaskOptionsError(
+      "INVALID_VISIBLE_PREFIX_LENGTH",
+      "The `visiblePrefixLength` option must be a non-negative integer.",
+    );
+  }
+
+  if (!Number.isInteger(visibleSuffixLength) || visibleSuffixLength < 0) {
+    throw new CpfMaskOptionsError(
+      "INVALID_VISIBLE_SUFFIX_LENGTH",
+      "The `visibleSuffixLength` option must be a non-negative integer.",
+    );
+  }
+
+  if (visiblePrefixLength + visibleSuffixLength >= CPF_LENGTH) {
+    throw new CpfMaskOptionsError(
+      "VISIBLE_LENGTH_OVERFLOW",
+      `The sum of visiblePrefixLength (${visiblePrefixLength}) and visibleSuffixLength (${visibleSuffixLength}) must be less than ${CPF_LENGTH}.`,
+    );
+  }
+
+  return { char, visiblePrefixLength, visibleSuffixLength };
+}
+
+/**
+ * Replaces digit positions between the visible prefix and visible suffix with `char`.
+ * Returns an array of 11 segments (each either a digit or the mask char) so that
+ * multi-codepoint characters are handled correctly by the caller.
+ */
+function applyMask(
+  digits: string,
+  char: string,
+  visiblePrefixLength: number,
+  visibleSuffixLength: number,
+): string[] {
+  const suffixStart = CPF_LENGTH - visibleSuffixLength;
+
+  return digits.split("").map((digit, i) => {
+    if (i < visiblePrefixLength || i >= suffixStart) return digit;
+    return char;
+  });
+}
+
+/**
+ * Inserts the canonical CPF separators between the 11 logical segments,
+ * producing the `XXX.XXX.XXX-XX` output format.
+ * Operates on an array so that multi-codepoint mask characters are handled correctly.
+ */
+function formatCpfDigits(segments: string[]): string {
+  const [d0, d1, d2, d3, d4, d5, d6, d7, d8, d9, d10] = segments;
+  return `${d0}${d1}${d2}.${d3}${d4}${d5}.${d6}${d7}${d8}-${d9}${d10}`;
+}
 
 /**
  * Normalizes a CPF string by stripping any non-digit characters.
@@ -30,37 +156,62 @@ export function normalize(value: string): string {
 }
 
 /**
- * Masks a CPF string, keeping the first 3 and last 2 digits visible.
- * Digits 4-9 are replaced with asterisks (*), and standard separators are preserved.
+ * Masks a CPF string in canonical format (`XXX.XXX.XXX-XX`), replacing a configurable
+ * range of digit positions with a mask character while keeping leading and trailing
+ * digits visible.
  *
- * @param value - The CPF string to mask. Can be normalized or formatted.
- * @returns The masked CPF string.
- * @throws {TypeError} If the provided value is not a string.
+ * Accepts both raw (`"29650899006"`) and pre-formatted (`"296.508.990-06"`) input.
+ * Input may only contain digit characters (`0–9`), dots (`.`), and dashes (`-`).
+ * After stripping separators, the result must be exactly 11 digits.
+ *
+ * @param value - CPF string to mask, raw or pre-formatted.
+ * @param options - Masking options.
+ * @param options.char - Replacement character for masked positions. Must be a single
+ *   Unicode grapheme. Default: `"*"`.
+ * @param options.visiblePrefixLength - Number of leading digits to leave unmasked.
+ *   Default: `3`.
+ * @param options.visibleSuffixLength - Number of trailing digits to leave unmasked.
+ *   Default: `2`.
+ * @returns Masked CPF string in `XXX.XXX.XXX-XX` format.
+ *
+ * @throws {TypeError} If `value` is not a string, or if `options` is not a plain object.
+ * @throws {CpfMaskInputError} `INVALID_INPUT` if `value` contains characters other than
+ *   digits, `.`, or `-`.
+ * @throws {CpfMaskInputError} `INVALID_LENGTH` if the sanitized input is not 11 digits long.
+ * @throws {CpfMaskOptionsError} `INVALID_MASK_CHAR` if `char` is not a single grapheme.
+ * @throws {CpfMaskOptionsError} `INVALID_VISIBLE_PREFIX_LENGTH` if `visiblePrefixLength`
+ *   is not a non-negative integer.
+ * @throws {CpfMaskOptionsError} `INVALID_VISIBLE_SUFFIX_LENGTH` if `visibleSuffixLength`
+ *   is not a non-negative integer.
+ * @throws {CpfMaskOptionsError} `VISIBLE_LENGTH_OVERFLOW` if the sum of
+ *   `visiblePrefixLength` and `visibleSuffixLength` is ≥ 11.
  *
  * @example
  * ```TypeScript
- * mask("52263944621"); // "522.***.***-21"
- * mask("522.639.446-21"); // "522.***.***-21"
+ * mask("29650899006");
+ * // → "296.***.***-06"
+ *
+ * mask("29650899006", { visiblePrefixLength: 0, visibleSuffixLength: 0 });
+ * // → "***.***.***-**"
+ *
+ * mask("29650899006", { char: "#", visiblePrefixLength: 3, visibleSuffixLength: 2 });
+ * // → "296.###.###-06"
  * ```
  */
-export function mask(value: string): string {
-  const normalized = normalize(value).slice(0, CPF_LENGTH);
-
-  if (normalized.length === 0) {
-    return "";
+export function mask(value: string, options: CpfMaskOptions = {}): string {
+  if (typeof value !== "string") {
+    throw new TypeError(
+      `Expected a string for CPF mask, but received ${value === null ? "null" : typeof value}`,
+    );
   }
 
-  const part1 = normalized.slice(0, 3);
-  const part2 = normalized.slice(3, 6);
-  const part3 = normalized.slice(6, 9);
-  const part4 = normalized.slice(9, 11);
+  assertOptions(options);
 
-  const maskedPart2 = part2 ? "*".repeat(part2.length) : "";
-  const maskedPart3 = part3 ? "*".repeat(part3.length) : "";
+  const { char, visiblePrefixLength, visibleSuffixLength } = assertMaskOptions(options);
+  const digits = normalizeMaskInput(value);
+  const masked = applyMask(digits, char, visiblePrefixLength, visibleSuffixLength);
 
-  const masked = [part1, maskedPart2, maskedPart3].filter(Boolean).join(".");
-
-  return part4.length > 0 ? `${masked}-${part4}` : masked;
+  return formatCpfDigits(masked);
 }
 
 /**
