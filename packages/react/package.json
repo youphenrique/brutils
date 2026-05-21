@@ -1,0 +1,49 @@
+{
+  "name": "@brutils/react",
+  "version": "0.1.0",
+  "description": "React UI components for @brutils/core utilities",
+  "homepage": "https://github.com/youphenrique/brutils#readme",
+  "bugs": {
+    "url": "https://github.com/youphenrique/brutils/issues"
+  },
+  "license": "MIT",
+  "author": "Paulo Henrique <pauloh1288@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/youphenrique/brutils.git"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "types": "./dist/index.d.mts",
+  "exports": {
+    ".": "./dist/index.mjs",
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "vp pack",
+    "dev": "vp pack --watch",
+    "test": "vp test",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "pnpm run build"
+  },
+  "dependencies": {
+    "@brutils/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "playwright": "^1",
+    "react": "^19",
+    "react-dom": "^19",
+    "typescript": "^6",
+    "vite-plus": "catalog:",
+    "vitest-browser-react": "^0.1"
+  },
+  "peerDependencies": {
+    "react": ">=18",
+    "react-dom": ">=18"
+  }
+}
