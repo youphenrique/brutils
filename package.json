@@ -7,7 +7,7 @@
     "format": "vp fmt",
     "test": "vp lint && vp run test -r",
     "ready": "vp fmt && vp lint && vp run test -r && vp run build -r",
-    "dev": "vp run docs#dev",
+    "dev": "vp run @brutils/docs#dev",
     "prepare": "vp config"
   },
   "devDependencies": {
