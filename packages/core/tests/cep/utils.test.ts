@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
-import type { AddressResponse } from "../../src/utilities/cep/index.ts";
+import type { AddressResponse } from "../../src/utilities/cep";
 import {
   clearCache,
   resetThrottler,

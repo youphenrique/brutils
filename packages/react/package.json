@@ -1,7 +1,7 @@
 {
   "name": "@brutils/react",
   "version": "0.1.0",
-  "description": "React UI components for @brutils/core utilities",
+  "description": "React UI components for brutils",
   "homepage": "https://github.com/youphenrique/brutils#readme",
   "bugs": {
     "url": "https://github.com/youphenrique/brutils/issues"
@@ -32,18 +32,20 @@
     "@brutils/core": "workspace:*"
   },
   "devDependencies": {
+    "@rolldown/plugin-babel": "^0.2.3",
     "@types/node": "catalog:",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^6.0.2",
     "playwright": "^1",
     "react": "^19",
     "react-dom": "^19",
-    "typescript": "^6",
+    "typescript": "catalog:",
     "vite-plus": "catalog:",
     "vitest-browser-react": "^0.1"
   },
   "peerDependencies": {
-    "react": ">=18",
-    "react-dom": ">=18"
+    "react": ">=19",
+    "react-dom": ">=19"
   }
 }

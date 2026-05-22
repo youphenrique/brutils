@@ -1,1 +1,1 @@
-export * from "./components/cpf/index";
+export { default as CpfInput } from "./cpf-input.vue";

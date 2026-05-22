@@ -1,11 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { cep } from "../../src/index.ts";
-import {
-  CepNotFoundError,
-  CepProviderError,
-  CepValidationError,
-} from "../../src/utilities/cep/index.ts";
+import { CepNotFoundError, CepProviderError, CepValidationError } from "../../src/utilities/cep";
 
 const originalFetch = globalThis.fetch;
 
