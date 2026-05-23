@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vite-plus/test";
 
 import { cnpj } from "../../src/index.ts";
-import { CnpjError } from "../../src/utilities/cnpj/index.ts";
+import { CnpjError } from "../../src/utilities/cnpj";
 
 describe("cnpj.normalize", () => {
   it("strips punctuation from a formatted numeric CNPJ", () => {

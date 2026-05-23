@@ -10,6 +10,9 @@
     "dev": "vp run @brutils/docs#dev",
     "prepare": "vp config"
   },
+  "dependencies": {
+    "typescript": "catalog:"
+  },
   "devDependencies": {
     "vite": "workspace:*",
     "vite-plus": "catalog:"
