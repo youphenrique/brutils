@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it } from "vitest";
 
 import { cnpj } from "../../src/index.ts";
 import { CnpjError } from "../../src/utilities/cnpj";

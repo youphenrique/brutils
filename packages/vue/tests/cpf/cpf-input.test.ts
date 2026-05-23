@@ -1,6 +1,6 @@
 import { render } from "vitest-browser-vue";
-import { userEvent } from "vite-plus/test/browser";
-import { expect, test, describe, vi } from "vite-plus/test";
+import { userEvent } from "vitest/browser";
+import { expect, test, describe, vi } from "vitest";
 
 import CpfInput from "../../src/components/cpf/cpf-input.vue";
 

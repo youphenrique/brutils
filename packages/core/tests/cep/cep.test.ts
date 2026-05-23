@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vite-plus/test";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { cep } from "../../src/index.ts";
 import { CepNotFoundError, CepProviderError, CepValidationError } from "../../src/utilities/cep";

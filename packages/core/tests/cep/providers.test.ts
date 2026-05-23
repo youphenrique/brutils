@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vite-plus/test";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { brasilapiProvider } from "../../src/utilities/cep/providers/brasilapi.ts";
 import { viacepProvider } from "../../src/utilities/cep/providers/viacep.ts";

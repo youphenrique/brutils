@@ -41,7 +41,7 @@
     "react": "^19",
     "react-dom": "^19",
     "typescript": "catalog:",
-    "vite-plus": "catalog:",
+    "vitest": "catalog:",
     "vitest-browser-react": "^0.1"
   },
   "peerDependencies": {

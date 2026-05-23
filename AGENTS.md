@@ -99,16 +99,6 @@ export * as ufs from "./utilities/ufs/index";
 export * as cep from "./utilities/cep/index";
 ```
 
-### Imports
-
-Always import from `vite-plus` rather than from raw dependencies directly:
-
-```ts
-import { defineConfig } from "vite-plus";
-import { expect, test, vi } from "vite-plus/test";
-import { defineConfig } from "vite-plus/pack"; // for tsdown.config.ts configuration
-```
-
 ---
 
 ## Key Conventions
