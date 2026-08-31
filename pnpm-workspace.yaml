@@ -16,12 +16,10 @@ catalog:
   typescript: ^7.0.2
   vite: npm:@voidzero-dev/vite-plus-core@0.2.7
   vite-plus: ^0.2.7
-  vitest: npm:@voidzero-dev/vite-plus-test@0.1.24
 
 catalogMode: prefer
 overrides:
   vite: "catalog:"
-  vitest: "catalog:"
 peerDependencyRules:
   allowAny:
     - vite
