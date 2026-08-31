@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "format": "vp fmt",
-    "test": "vp lint && vp run test -r",
-    "ready": "vp fmt && vp lint && vp run test -r && pnpm -r run build",
+    "test": "vp lint && pnpm -r run test",
+    "ready": "vp fmt && vp lint && pnpm -r run test && pnpm -r run build",
     "dev": "vp run @brutils/docs#dev",
     "prepare": "vp config"
   },
