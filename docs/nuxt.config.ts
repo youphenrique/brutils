@@ -1,3 +1,5 @@
+import { defineNuxtConfig } from "nuxt/config";
+
 export default defineNuxtConfig({
   extends: ["docus"],
   modules: ["@nuxtjs/i18n"],
