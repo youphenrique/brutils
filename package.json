@@ -8,7 +8,7 @@
     "test": "vp lint && pnpm -r run test",
     "ready": "vp fmt && vp lint && pnpm -r run test && pnpm -r run build",
     "dev": "vp run @brutils/docs#dev",
-    "prepare": "vp config"
+    "prepare": "vp config --no-agent"
   },
   "dependencies": {
     "typescript": "catalog:"
