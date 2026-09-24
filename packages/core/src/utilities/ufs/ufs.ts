@@ -1,4 +1,4 @@
-import { assertOptions } from "../../common/assert-options";
+import { assertOptions } from "../../common/assert.ts";
 import { REGIONS, UFS } from "./constants";
 import { normalizeFilter } from "./utils";
 import type { ListOptions, UF } from "./types";

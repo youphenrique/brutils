@@ -1,5 +1,5 @@
-import { assertOptions } from "../../common/assert-options";
-import { formatProgressive } from "../../common/progressive-format";
+import { assertOptions } from "../../common/assert.ts";
+import { formatProgressive } from "../../common/format.ts";
 import {
   CEP_LENGTH,
   CEP_RAW_PATTERN,
