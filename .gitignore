@@ -24,3 +24,4 @@ dist-ssr
 *.sw?
 .antigravitycli
 .claude/settings.local.json
+.pnpm-store/
