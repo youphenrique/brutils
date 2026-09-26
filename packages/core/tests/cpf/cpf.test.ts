@@ -4,7 +4,7 @@ import { cpf } from "../../src/index.ts";
 import { CpfError } from "../../src/utilities/cpf";
 
 describe("cpf.normalize", () => {
-  it("strips non-digit characters from a formatted CPF", () => {
+  it("strips non-digit characters from a partial, overlong, or well-formed CPF", () => {
     expect(cpf.normalize("779.333.21")).toBe("77933321");
     expect(cpf.normalize("916.534.780-39")).toBe("91653478039");
     expect(cpf.normalize("779.333.210-5466")).toBe("7793332105466");
@@ -14,6 +14,7 @@ describe("cpf.normalize", () => {
     expect(cpf.normalize("916.534780-39")).toBe("91653478039");
     expect(cpf.normalize("abc916!!!534...780--39def")).toBe("91653478039");
     expect(cpf.normalize(" 916.534.780-39 ")).toBe("91653478039");
+    // "９" is U+FF19 (full-width nine), not ASCII "9"; normalize keeps only ASCII digits, so it's dropped.
     expect(cpf.normalize("９16.534.780-39")).toBe("1653478039");
   });
 
