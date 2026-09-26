@@ -21,6 +21,11 @@ describe("cpf.normalize", () => {
     expect(cpf.normalize("91653478039")).toBe("91653478039");
   });
 
+  it("preserves leading zeros", () => {
+    expect(cpf.normalize("00000000191")).toBe("00000000191");
+    expect(cpf.normalize("000.000.001-91")).toBe("00000000191");
+  });
+
   it("returns an empty string for an empty input", () => {
     expect(cpf.normalize("")).toBe("");
   });
@@ -161,6 +166,10 @@ describe("cpf.validate", () => {
     expect(result.error?.code).toBe("INVALID_CHECKSUM");
 
     result = cpf.validate("11257245286");
+    expect(result.success).toBe(false);
+    expect(result.error?.code).toBe("INVALID_CHECKSUM");
+
+    result = cpf.validate("123.456.789-00");
     expect(result.success).toBe(false);
     expect(result.error?.code).toBe("INVALID_CHECKSUM");
   });

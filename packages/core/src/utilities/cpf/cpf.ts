@@ -1,6 +1,6 @@
 import { assertOptions } from "../../common/assert.ts";
 import { formatProgressive } from "../../common/format.ts";
-import { CPF_LENGTH, CPF_RAW_PATTERN, UFS_REGION_MAP } from "./constants";
+import { CPF_LENGTH, UFS_REGION_MAP } from "./constants";
 import { CpfError, randomDigit, computeCheckDigit, assertValid } from "./utils";
 import type { CpfGenerateOptions, CpfValidateResult } from "./types";
 
@@ -84,10 +84,6 @@ export function format(value: string): string {
     throw new TypeError(
       `Expected a string for CPF format, but received ${value === null ? "null" : typeof value}`,
     );
-  }
-
-  if (!CPF_RAW_PATTERN.test(value)) {
-    return value;
   }
 
   return value.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, "$1.$2.$3-$4");
