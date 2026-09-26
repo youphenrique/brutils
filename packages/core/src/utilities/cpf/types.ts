@@ -11,10 +11,6 @@ export type CpfValidateResult =
   | { success: true; error: null }
   | { success: false; error: CpfError };
 
-export interface CpfFormatOptions {
-  pad?: boolean;
-}
-
 export interface CpfGenerateOptions {
   uf?: keyof typeof UFS_REGION_MAP;
   formatted?: boolean;

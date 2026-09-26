@@ -4,7 +4,7 @@ import { cpf } from "../../src/index.ts";
 import { CpfError } from "../../src/utilities/cpf";
 
 describe("cpf.normalize", () => {
-  it("strips non-digit characters from a formatted CPF", () => {
+  it("strips non-digit characters from a partial, overlong, or well-formed CPF", () => {
     expect(cpf.normalize("779.333.21")).toBe("77933321");
     expect(cpf.normalize("916.534.780-39")).toBe("91653478039");
     expect(cpf.normalize("779.333.210-5466")).toBe("7793332105466");
@@ -13,10 +13,18 @@ describe("cpf.normalize", () => {
   it("handles partially formatted and mixed inputs", () => {
     expect(cpf.normalize("916.534780-39")).toBe("91653478039");
     expect(cpf.normalize("abc916!!!534...780--39def")).toBe("91653478039");
+    expect(cpf.normalize(" 916.534.780-39 ")).toBe("91653478039");
+    // "９" is U+FF19 (full-width nine), not ASCII "9"; normalize keeps only ASCII digits, so it's dropped.
+    expect(cpf.normalize("９16.534.780-39")).toBe("1653478039");
   });
 
   it("returns the same string for already-normalized input", () => {
     expect(cpf.normalize("91653478039")).toBe("91653478039");
+  });
+
+  it("preserves leading zeros", () => {
+    expect(cpf.normalize("00000000191")).toBe("00000000191");
+    expect(cpf.normalize("000.000.001-91")).toBe("00000000191");
   });
 
   it("returns an empty string for an empty input", () => {
@@ -74,8 +82,13 @@ describe("cpf.format", () => {
     expect(cpf.format("52263944621")).toBe("522.639.446-21");
   });
 
-  it("reformats valid formatted CPF", () => {
+  it("preserves canonical formatted CPF", () => {
     expect(cpf.format("522.639.446-21")).toBe("522.639.446-21");
+  });
+
+  it("formats well-shaped CPF without checking its checksum", () => {
+    expect(cpf.format("12345678900")).toBe("123.456.789-00");
+    expect(cpf.format("123.456.789-00")).toBe("123.456.789-00");
   });
 
   it("preserves leading zeros", () => {
@@ -86,6 +99,7 @@ describe("cpf.format", () => {
     expect(cpf.format("  522 639 446 21  ")).toBe("  522 639 446 21  ");
     expect(cpf.format("943.?ABC895.751-04abc")).toBe("943.?ABC895.751-04abc");
     expect(cpf.format("522.63944621")).toBe("522.63944621");
+    expect(cpf.format("９1653478039")).toBe("９1653478039");
   });
 
   it("returns as is for invalid CPF lengths", () => {
@@ -93,25 +107,6 @@ describe("cpf.format", () => {
     expect(cpf.format("9")).toBe("9");
     expect(cpf.format("9438")).toBe("9438");
     expect(cpf.format("51660311055742")).toBe("51660311055742");
-  });
-
-  it("left-pads with zeros when pad option is enabled", () => {
-    expect(cpf.format("", { pad: true })).toBe("000.000.000-00");
-    expect(cpf.format("9", { pad: true })).toBe("000.000.000-09");
-    expect(cpf.format("94389575104", { pad: true })).toBe("943.895.751-04");
-    expect(cpf.format("9438957510466", { pad: true })).toBe("9438957510466");
-  });
-
-  it("accepts undefined options and uses defaults", () => {
-    expect(cpf.format("52263944621", undefined)).toBe("522.639.446-21");
-  });
-
-  it("throws a TypeError for invalid options type", () => {
-    expect(() => cpf.format("52263944621", null as any)).toThrow(TypeError);
-    expect(() => cpf.format("52263944621", 123 as any)).toThrow(TypeError);
-    expect(() => cpf.format("52263944621", "x" as any)).toThrow(TypeError);
-    expect(() => cpf.format("52263944621", true as any)).toThrow(TypeError);
-    expect(() => cpf.format("52263944621", [] as any)).toThrow(TypeError);
   });
 
   it("throws a TypeError for invalid type input", () => {
@@ -127,6 +122,15 @@ describe("cpf.validate", () => {
     const result = cpf.validate("101#688!!!!!!542......36");
     expect(result.success).toBe(false);
     expect(result.error?.code).toBe("INVALID_FORMAT");
+
+    for (const value of [
+      "916.534780-39",
+      "abc916!!!534...780--39def",
+      " 916.534.780-39 ",
+      "９1653478039",
+    ]) {
+      expect(cpf.validate(value).error?.code).toBe("INVALID_FORMAT");
+    }
   });
 
   it("returns failure with INVALID_FORMAT for wrong length", () => {
@@ -165,11 +169,16 @@ describe("cpf.validate", () => {
     result = cpf.validate("11257245286");
     expect(result.success).toBe(false);
     expect(result.error?.code).toBe("INVALID_CHECKSUM");
+
+    result = cpf.validate("123.456.789-00");
+    expect(result.success).toBe(false);
+    expect(result.error?.code).toBe("INVALID_CHECKSUM");
   });
 
   it("returns success for raw and formatted valid inputs", () => {
     expect(cpf.validate("32678128016")).toEqual({ success: true, error: null });
     expect(cpf.validate("422.091.120-01")).toEqual({ success: true, error: null });
+    expect(cpf.validate("00000000191")).toEqual({ success: true, error: null });
   });
 
   it("throws a TypeError for invalid type input", () => {

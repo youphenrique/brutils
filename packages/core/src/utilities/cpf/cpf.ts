@@ -1,15 +1,15 @@
 import { assertOptions } from "../../common/assert.ts";
 import { formatProgressive } from "../../common/format.ts";
-import { CPF_LENGTH, CPF_RAW_PATTERN, UFS_REGION_MAP } from "./constants";
+import { CPF_LENGTH, UFS_REGION_MAP } from "./constants";
 import { CpfError, randomDigit, computeCheckDigit, assertValid } from "./utils";
-import type { CpfFormatOptions, CpfGenerateOptions, CpfValidateResult } from "./types";
+import type { CpfGenerateOptions, CpfValidateResult } from "./types";
 
 /**
- * Normalizes a CPF string by stripping any non-digit characters.
- * It returns the canonical raw form of the CPF (digits only).
+ * Extracts all ASCII digits from a CPF string without validating it.
+ * This is lossy: malformed input can produce the same result as a valid CPF.
  *
  * @param value - The CPF string to normalize. Can be formatted, unformatted, or mixed.
- * @returns A digits-only string representing the normalized CPF.
+ * @returns All extracted digits, including those from partial or overlong input.
  * @throws {TypeError} If the provided value is not a string.
  *
  * @example
@@ -64,35 +64,29 @@ export function mask(value: string): string {
 }
 
 /**
- * Formats a CPF string into the standard Brazilian formatting (`XXX.XXX.XXX-XX`).
- * CPF value (invalid, badly formatted, or not) returns as is.
+ * Formats exactly 11 ASCII digits as `XXX.XXX.XXX-XX`.
+ * All other strings, including canonical formatted input, return unchanged.
+ * Formatting does not check CPF validity or add digits.
  *
- * @param value - CPF value in any form (formatted, unformatted, or mixed).
- * @param options - Optional formatting options. Set `pad` to `true` to left-pad with zeros up to 11 digits.
- * @returns The CPF string with formatting applied.
+ * @param value - CPF string to format.
+ * @returns The formatted CPF or the original string.
+ * @throws {TypeError} If the provided value is not a string.
  *
  * @example
  * ```TypeScript
  * format("52263944621"); // "522.639.446-21"
- * format("123", { pad: true }); // "000.000.001-23"
+ * format("522.639.446-21"); // "522.639.446-21"
+ * format("123"); // "123"
  * ```
  */
-export function format(value: string, options: CpfFormatOptions = {}): string {
+export function format(value: string): string {
   if (typeof value !== "string") {
     throw new TypeError(
       `Expected a string for CPF format, but received ${value === null ? "null" : typeof value}`,
     );
   }
 
-  assertOptions(options);
-
-  const baseValue = options.pad ? value.padStart(CPF_LENGTH, "0") : value;
-
-  if (!CPF_RAW_PATTERN.test(baseValue)) {
-    return value;
-  }
-
-  return baseValue.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, "$1.$2.$3-$4");
+  return value.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, "$1.$2.$3-$4");
 }
 
 /**
@@ -175,7 +169,9 @@ export function generate(options: CpfGenerateOptions = {}): string {
 }
 
 /**
- * Validates a CPF string.
+ * Validates exactly 11 ASCII digits or the canonical `###.###.###-##` format.
+ * Other strings return `INVALID_FORMAT`; well-shaped values are checked for
+ * repeated digits and checksum errors.
  *
  * @param value - CPF value to validate.
  * @returns `{ success: true, error: null }` if valid; `{ success: false, error: CpfError }` if invalid.
