@@ -20,3 +20,12 @@ Brazilian data utilities for TypeScript.
 `format` changes only a string of exactly 11 ASCII digits. It leaves every other string unchanged, including an already canonical CPF, and does not check the checksum or pad partial input. A formatted return value is no proof of validity. Use `cpf.formatAsYouType` to display partial input while typing.
 
 `validate` accepts only 11 ASCII digits or exact canonical punctuation. Length and syntax failures both use `INVALID_FORMAT`; repeated digits use `REPEATED_DIGITS`, and other well-shaped invalid values use `INVALID_CHECKSUM`.
+
+### Decisions
+
+- `normalize` keeps its name and stays permissive digit extraction. No separate extraction helper is added; the lossy behavior is documented above instead.
+- `format` changes only exactly 11 ASCII digits and returns every other string unchanged. It has no padding option, because formatting must not invent identifier digits.
+- `validate` accepts only 11 ASCII digits or exact `###.###.###-##`. Whitespace, other punctuation, and non-ASCII numerals are rejected.
+- `INVALID_FORMAT` covers both length and syntax failures. No `INVALID_LENGTH` code is added unless callers need to tell them apart.
+- Whether `validate` keeps throwing `TypeError` for non-string input or returns an `INVALID_TYPE` failure is deferred to [#63](https://github.com/youphenrique/brutils/issues/63).
+- CNPJ and CEP adopt a coherent contract in [#65](https://github.com/youphenrique/brutils/issues/65) and [#66](https://github.com/youphenrique/brutils/issues/66).
