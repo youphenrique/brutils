@@ -24,13 +24,12 @@
   "scripts": {
     "build": "vp pack",
     "dev": "vp pack --watch",
-    "lint:package": "publint --pack npm && attw --pack . --ignore-rules cjs-resolves-to-esm",
     "test": "vp test",
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "pnpm run build"
   },
   "devDependencies": {
-    "@arethetypeswrong/cli": "catalog:",
+    "@arethetypeswrong/core": "catalog:",
     "@types/node": "catalog:",
     "bumpp": "^12.3.0",
     "publint": "catalog:",
