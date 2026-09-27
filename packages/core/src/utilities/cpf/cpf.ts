@@ -1,6 +1,6 @@
 import { assertOptions } from "../../common/assert.ts";
 import { formatProgressive } from "../../common/format.ts";
-import { CPF_LENGTH, UFS_REGION_MAP } from "./constants";
+import { CPF_FORMATTED_PATTERN, CPF_LENGTH, CPF_RAW_PATTERN, UFS_REGION_MAP } from "./constants";
 import { CpfError, randomDigit, computeCheckDigit, assertValid } from "./utils";
 import type { CpfGenerateOptions, CpfValidateResult } from "./types";
 
@@ -30,37 +30,35 @@ export function normalize(value: string): string {
 }
 
 /**
- * Masks a CPF string, keeping the first 3 and last 2 digits visible.
- * Digits 4-9 are replaced with asterisks (*), and standard separators are preserved.
+ * Masks a complete CPF for display, revealing only the last 2 digits.
+ * Accepts exactly 11 ASCII digits or the canonical formatted shape without checking the checksum.
+ * This is display masking, not anonymization.
  *
- * @param value - The CPF string to mask. Can be normalized or formatted.
- * @returns The masked CPF string.
+ * @param value - A raw or canonically formatted CPF string.
+ * @returns The masked CPF, or `null` for malformed strings. Handle `null` with a neutral placeholder, never the original value.
  * @throws {TypeError} If the provided value is not a string.
  *
  * @example
  * ```TypeScript
- * mask("52263944621"); // "522.***.***-21"
- * mask("522.639.446-21"); // "522.***.***-21"
+ * mask("52263944621"); // "***.***.***-21"
+ * mask("522.639.446-21"); // "***.***.***-21"
+ * mask("5226"); // null
  * ```
  */
-export function mask(value: string): string {
-  const normalized = normalize(value).slice(0, CPF_LENGTH);
-
-  if (normalized.length === 0) {
-    return "";
+export function mask(value: string): string | null {
+  if (typeof value !== "string") {
+    throw new TypeError(
+      `Expected a string for CPF mask, but received ${value === null ? "null" : typeof value}`,
+    );
   }
 
-  const part1 = normalized.slice(0, 3);
-  const part2 = normalized.slice(3, 6);
-  const part3 = normalized.slice(6, 9);
-  const part4 = normalized.slice(9, 11);
+  const isRaw = value.length === CPF_LENGTH && CPF_RAW_PATTERN.test(value);
+  const isFormatted = value.length === CPF_LENGTH + 3 && CPF_FORMATTED_PATTERN.test(value);
+  if (!isRaw && !isFormatted) {
+    return null;
+  }
 
-  const maskedPart2 = part2 ? "*".repeat(part2.length) : "";
-  const maskedPart3 = part3 ? "*".repeat(part3.length) : "";
-
-  const masked = [part1, maskedPart2, maskedPart3].filter(Boolean).join(".");
-
-  return part4.length > 0 ? `${masked}-${part4}` : masked;
+  return `***.***.***-${value.slice(-2)}`;
 }
 
 /**
