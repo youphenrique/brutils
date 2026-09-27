@@ -44,3 +44,6 @@ jobs:
 
       - name: Build
         run: pnpm -r run build
+
+      - name: Validate package metadata and types
+        run: pnpm --filter @brutils/core run lint:package
