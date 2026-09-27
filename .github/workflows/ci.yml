@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  validate:
+    name: Validate (Node ${{ matrix.node-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Supported range is ^24.13.1: test the declared floor and the latest 24.x.
+        node-version: ["24.13.1", "24"]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: voidzero-dev/setup-vp@3754dd7dbdb32bd8f6d28b6043de13ad3a75f21f # v1.21.1
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: true
+          run-install: |
+            args: ["--frozen-lockfile"]
+
+      - name: Format, lint, and type-aware checks
+        run: vp check
+
+      - name: Type check
+        run: pnpm -r run typecheck
+
+      - name: Test
+        run: pnpm -r run test
+
+      - name: Build
+        run: pnpm -r run build
