@@ -55,6 +55,40 @@ describe("cpf.mask", () => {
     expect(cpf.mask("123.456.789-00")).toBe("***.***.***-00");
   });
 
+  it("uses defaults for omitted options and explicit undefined properties", () => {
+    expect(cpf.mask("29650899006", {})).toBe("***.***.***-06");
+    expect(cpf.mask("29650899006", { char: undefined, strategy: undefined })).toBe(
+      "***.***.***-06",
+    );
+    expect(cpf.mask("29650899006", undefined)).toBe("***.***.***-06");
+  });
+
+  it("applies each strategy to raw and canonical input without checking the checksum", () => {
+    const cases = [
+      ["suffix", "***.***.***-06", "***.***.***-00"],
+      ["prefix-suffix", "296.***.***-06", "123.***.***-00"],
+      ["redacted", "***.***.***-**", "***.***.***-**"],
+    ] as const;
+
+    for (const [strategy, validExpected, badChecksumExpected] of cases) {
+      expect(cpf.mask("29650899006", { strategy })).toBe(validExpected);
+      expect(cpf.mask("296.508.990-06", { strategy })).toBe(validExpected);
+      expect(cpf.mask("12345678900", { strategy })).toBe(badChecksumExpected);
+      expect(cpf.mask("123.456.789-00", { strategy })).toBe(badChecksumExpected);
+    }
+  });
+
+  it("replaces every hidden digit with a custom character", () => {
+    expect(cpf.mask("29650899006", { char: "#" })).toBe("###.###.###-06");
+    expect(cpf.mask("29650899006", { char: "#", strategy: "prefix-suffix" })).toBe(
+      "296.###.###-06",
+    );
+    expect(cpf.mask("29650899006", { char: "#", strategy: "redacted" })).toBe("###.###.###-##");
+    expect(cpf.mask("29650899006", { char: "🔒", strategy: "redacted" })).toBe(
+      "🔒🔒🔒.🔒🔒🔒.🔒🔒🔒-🔒🔒",
+    );
+  });
+
   it("returns null for empty, partial, overlong, and mixed input", () => {
     for (const value of [
       "",
@@ -79,6 +113,59 @@ describe("cpf.mask", () => {
     expect(() => cpf.mask(undefined as any)).toThrow(TypeError);
     expect(() => cpf.mask(12345678909 as any)).toThrow(TypeError);
     expect(() => cpf.mask({} as any)).toThrow(TypeError);
+  });
+
+  it("rejects invalid options containers and values with descriptive TypeErrors", () => {
+    for (const options of [null, [], "redacted", 1]) {
+      expect(() => cpf.mask("29650899006", options as never)).toThrow(/Expected an options object/);
+    }
+
+    for (const strategy of ["redact", "", 0, null, false]) {
+      expect(() => cpf.mask("29650899006", { strategy } as never)).toThrow(
+        /Expected CPF mask strategy/,
+      );
+    }
+
+    expect(() => cpf.mask("29650899006", { strategy: "redact" } as never)).toThrow(
+      'Expected CPF mask strategy to be one of "suffix", "prefix-suffix", "redacted", but received "redact"',
+    );
+    expect(() => cpf.mask("29650899006", { char: 1 } as never)).toThrow(/but received number$/);
+
+    for (const char of [
+      "",
+      "##",
+      "🔒️",
+      "0",
+      "١",
+      "Ⅷ",
+      " ",
+      "\t",
+      "\u00a0",
+      "\u0301",
+      "\u200d",
+      "\u0000",
+      "\ud800",
+      "\udc00",
+      "\u3164",
+      "\uffa0",
+      "\u2800",
+      "\ue000",
+      "\u0378",
+      ".",
+      "-",
+      1,
+      null,
+    ]) {
+      expect(() => cpf.mask("29650899006", { char } as never)).toThrow(/Expected CPF mask char/);
+    }
+  });
+
+  it("validates options before returning null for a malformed CPF", () => {
+    expect(() => cpf.mask("12", { strategy: "redact" } as never)).toThrow(
+      /Expected CPF mask strategy/,
+    );
+    expect(() => cpf.mask("12", { char: "0" })).toThrow(/Expected CPF mask char/);
+    expect(cpf.mask("12", { strategy: "redacted" })).toBeNull();
   });
 });
 

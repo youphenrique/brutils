@@ -19,7 +19,15 @@ Brazilian data utilities for TypeScript.
 
 `format` changes only a string of exactly 11 ASCII digits. It leaves every other string unchanged, including an already canonical CPF, and does not check the checksum or pad partial input. A formatted return value is no proof of validity. Use `cpf.formatAsYouType` to display partial input while typing.
 
-`cpf.mask` is for privacy display of a complete CPF. It accepts exactly 11 ASCII digits or the canonical `###.###.###-##` shape and reveals only the last two digits: `cpf.mask("91653478039")` returns `"***.***.***-39"`. It does not check the checksum, so it can redact a well-shaped value that fails validation. Empty, partial, overlong, or malformed strings return `null`, and non-string values throw `TypeError`. If it returns `null`, show a neutral placeholder or handle invalid input separately; never display the original value as a fallback. This display mask is not anonymization. Use `cpf.format` for complete-number formatting and `cpf.formatAsYouType` for partial input while typing.
+`cpf.mask` displays a complete CPF with hidden digits. It accepts exactly 11 ASCII digits or the canonical `###.###.###-##` shape without checking the checksum. The default `"suffix"` strategy reveals only the last two digits; `"prefix-suffix"` reveals the first three and last two; `"redacted"` hides every digit. The optional `char` replaces each hidden digit and defaults to `"*"`. It must be exactly one visible Unicode code point (counted by code point, not grapheme, so `"🔒"` is accepted but `"🔒️"` with a variation selector is not) and cannot be a number, whitespace, mark, control, format, or invisible filler character, `.`, or `-`:
+
+```ts
+cpf.mask("29650899006"); // "***.***.***-06"
+cpf.mask("29650899006", { strategy: "prefix-suffix" }); // "296.***.***-06"
+cpf.mask("29650899006", { strategy: "redacted", char: "#" }); // "###.###.###-##"
+```
+
+Empty, partial, overlong, or malformed strings return `null`. Non-string CPF values, invalid options containers, and invalid option values throw `TypeError`. If masking returns `null`, show a neutral placeholder or handle invalid input separately; never display the original value as a fallback. This mask is for display, not anonymization: even `"redacted"` reveals that the input has CPF shape. Use `cpf.format` for complete-number formatting and `cpf.formatAsYouType` for partial input while typing.
 
 `validate` accepts only 11 ASCII digits or exact canonical punctuation. Length and syntax failures both use `INVALID_FORMAT`; repeated digits use `REPEATED_DIGITS`, and other well-shaped invalid values use `INVALID_CHECKSUM`.
 
