@@ -71,10 +71,15 @@ export function format(value: string, options: CnpjFormatOptions = {}): string {
 }
 
 /**
- * Progressively formats a CNPJ while typing using the pattern `XX.XXX.XXX/XXXX-XX`.
+ * Displays an editable CNPJ field using the pattern `XX.XXX.XXX/XXXX-XX`.
+ * Removes non-ASCII alphanumeric characters, uppercases letters, keeps the
+ * first 12 base characters and then the first two ASCII check digits. Each
+ * separator appears only when the following segment has a character. Empty
+ * and partial strings are accepted. This is lossy UI behavior, not parsing or
+ * validation: validate the original submitted value, not this output.
  *
- * @param value - CNPJ value in any form.
- * @returns A progressively formatted CNPJ string.
+ * @param value - The current input-field string.
+ * @returns The progressively formatted display string.
  * @throws {TypeError} If the provided value is not a string.
  *
  * @example
@@ -91,7 +96,7 @@ export function formatAsYouType(value: string): string {
     );
   }
 
-  const normalized = normalize(value).slice(0, CNPJ_LENGTH);
+  const normalized = normalize(value);
   const base = normalized.slice(0, 12);
   const checkDigits = normalized.slice(12).replace(/\D/g, "").slice(0, 2);
 
