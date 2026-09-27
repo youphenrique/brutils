@@ -2,6 +2,10 @@
 
 Brazilian data utilities for TypeScript.
 
+## Node.js support
+
+Node.js 24.13.1 or newer within the Node.js 24 release line is supported. Other Node.js major versions are not currently claimed as supported. The minimum version is recorded in the package's `engines.node` field; the CI matrix should test Node.js 24 before a release.
+
 ## CPF input contract
 
 `cpf.normalize`, `cpf.format`, and `cpf.validate` serve different purposes. For string inputs, none throws because of malformed content. All three expect a string at runtime and throw `TypeError` for other types. `cpf.validate` returns a result object for strings; it is the only one of these functions that decides CPF validity.
