@@ -54,6 +54,7 @@ export function mask(value: string): string | null {
 
   const isRaw = value.length === CPF_LENGTH && CPF_RAW_PATTERN.test(value);
   const isFormatted = value.length === CPF_LENGTH + 3 && CPF_FORMATTED_PATTERN.test(value);
+
   if (!isRaw && !isFormatted) {
     return null;
   }
