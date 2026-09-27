@@ -40,33 +40,38 @@ describe("cpf.normalize", () => {
 });
 
 describe("cpf.mask", () => {
-  it("masks a normalized CPF correctly", () => {
-    expect(cpf.mask("91653478039")).toBe("916.***.***-39");
+  it("reveals only the last two digits of a raw CPF", () => {
+    expect(cpf.mask("91653478039")).toBe("***.***.***-39");
+    expect(cpf.mask("00000000191")).toBe("***.***.***-91");
   });
 
-  it("masks a formatted CPF correctly", () => {
-    expect(cpf.mask("916.534.780-39")).toBe("916.***.***-39");
+  it("masks a canonically formatted CPF", () => {
+    expect(cpf.mask("916.534.780-39")).toBe("***.***.***-39");
   });
 
-  it("masks partially formatted and mixed inputs correctly", () => {
-    expect(cpf.mask("abc916!!!534...780--39def")).toBe("916.***.***-39");
+  it("accepts a well-shaped CPF even when its checksum is wrong", () => {
+    expect(cpf.validate("12345678900").error?.code).toBe("INVALID_CHECKSUM");
+    expect(cpf.mask("12345678900")).toBe("***.***.***-00");
+    expect(cpf.mask("123.456.789-00")).toBe("***.***.***-00");
   });
 
-  it("returns an empty string for an empty input", () => {
-    expect(cpf.mask("")).toBe("");
-  });
-
-  it("handles short inputs progressively", () => {
-    expect(cpf.mask("12")).toBe("12");
-    expect(cpf.mask("1234")).toBe("123.*");
-    expect(cpf.mask("123456")).toBe("123.***");
-    expect(cpf.mask("1234567")).toBe("123.***.*");
-    expect(cpf.mask("1234567890")).toBe("123.***.***-0");
-  });
-
-  it("truncates input to 11 characters if longer", () => {
-    expect(cpf.mask("241550840318")).toBe("241.***.***-31");
-    expect(cpf.mask("916.534.780-39621")).toBe("916.***.***-39");
+  it("returns null for empty, partial, overlong, and mixed input", () => {
+    for (const value of [
+      "",
+      "12",
+      "1234567890",
+      "916.534.780-3",
+      "241550840318",
+      "916.534.780-39621",
+      "91653478039\n",
+      "916.534.780-39\n",
+      "916.534780-39",
+      "abc916!!!534...780--39def",
+      " 916.534.780-39 ",
+      "９1653478039",
+    ]) {
+      expect(cpf.mask(value)).toBeNull();
+    }
   });
 
   it("throws a TypeError for invalid type input", () => {
