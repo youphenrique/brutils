@@ -15,3 +15,10 @@ export interface CpfGenerateOptions {
   uf?: keyof typeof UFS_REGION_MAP;
   formatted?: boolean;
 }
+
+export type CpfMaskStrategy = "suffix" | "prefix-suffix" | "redacted";
+
+export type CpfMaskOptions = {
+  char?: string;
+  strategy?: CpfMaskStrategy;
+};

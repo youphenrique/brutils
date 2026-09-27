@@ -2,7 +2,7 @@ import { assertOptions } from "../../common/assert.ts";
 import { formatProgressive } from "../../common/format.ts";
 import { CPF_FORMATTED_PATTERN, CPF_LENGTH, CPF_RAW_PATTERN, UFS_REGION_MAP } from "./constants";
 import { CpfError, randomDigit, computeCheckDigit, assertValid } from "./utils";
-import type { CpfGenerateOptions, CpfValidateResult } from "./types";
+import type { CpfGenerateOptions, CpfMaskOptions, CpfValidateResult } from "./types";
 
 /**
  * Extracts all ASCII digits from a CPF string without validating it.
@@ -30,25 +30,47 @@ export function normalize(value: string): string {
 }
 
 /**
- * Masks a complete CPF for display, revealing only the last 2 digits.
+ * Masks a complete CPF for display. By default, reveals only the last 2 digits.
  * Accepts exactly 11 ASCII digits or the canonical formatted shape without checking the checksum.
  * This is display masking, not anonymization.
  *
  * @param value - A raw or canonically formatted CPF string.
+ * @param options - Optional mask character and visibility strategy.
  * @returns The masked CPF, or `null` for malformed strings. Handle `null` with a neutral placeholder, never the original value.
- * @throws {TypeError} If the provided value is not a string.
+ * @throws {TypeError} If the value, options, strategy, or character is invalid.
  *
  * @example
  * ```TypeScript
  * mask("52263944621"); // "***.***.***-21"
  * mask("522.639.446-21"); // "***.***.***-21"
+ * mask("52263944621", { strategy: "prefix-suffix" }); // "522.***.***-21"
+ * mask("52263944621", { strategy: "redacted", char: "#" }); // "###.###.###-##"
  * mask("5226"); // null
  * ```
  */
-export function mask(value: string): string | null {
+export function mask(value: string, options: CpfMaskOptions = {}): string | null {
   if (typeof value !== "string") {
     throw new TypeError(
       `Expected a string for CPF mask, but received ${value === null ? "null" : typeof value}`,
+    );
+  }
+
+  assertOptions(options);
+  const { char = "*", strategy = "suffix" } = options;
+
+  if (strategy !== "suffix" && strategy !== "prefix-suffix" && strategy !== "redacted") {
+    throw new TypeError(
+      'Expected CPF mask strategy to be "suffix", "prefix-suffix", or "redacted".',
+    );
+  }
+
+  if (
+    typeof char !== "string" ||
+    Array.from(char).length !== 1 ||
+    /[\p{N}\p{White_Space}\p{M}\p{Cc}\p{Cf}\p{Cs}.-]/u.test(char)
+  ) {
+    throw new TypeError(
+      "Expected CPF mask char to be one visible Unicode code point other than a number, mark, or separator.",
     );
   }
 
@@ -59,7 +81,11 @@ export function mask(value: string): string | null {
     return null;
   }
 
-  return `***.***.***-${value.slice(-2)}`;
+  const hiddenGroup = char.repeat(3);
+  const prefix = strategy === "prefix-suffix" ? value.slice(0, 3) : hiddenGroup;
+  const suffix = strategy === "redacted" ? char.repeat(2) : value.slice(-2);
+
+  return `${prefix}.${hiddenGroup}.${hiddenGroup}-${suffix}`;
 }
 
 /**
