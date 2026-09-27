@@ -371,6 +371,7 @@ describe("cpf.generate", () => {
 
 describe("cpf.formatAsYouType", () => {
   const cases: Array<[string, string]> = [
+    ["", ""],
     ["5", "5"],
     ["52", "52"],
     ["522", "522"],
@@ -383,8 +384,12 @@ describe("cpf.formatAsYouType", () => {
     ["5226394462", "522.639.446-2"],
     ["52263944621", "522.639.446-21"],
     ["522639446219", "522.639.446-21"],
+    ["52263944621999", "522.639.446-21"],
     ["522.639.446-21", "522.639.446-21"],
-    ["", ""],
+    ["12345678900", "123.456.789-00"],
+    ["00000000191", "000.000.001-91"],
+    ["abc522.639.446-21xyz", "522.639.446-21"],
+    ["５٢52263944621", "522.639.446-21"],
     ["abc", ""],
   ];
 
@@ -392,6 +397,13 @@ describe("cpf.formatAsYouType", () => {
     for (const [input, expected] of cases) {
       expect(cpf.formatAsYouType(input)).toBe(expected);
     }
+  });
+
+  it("does not establish validity of the original input", () => {
+    const pasted = "abc52263944621";
+
+    expect(cpf.formatAsYouType(pasted)).toBe("522.639.446-21");
+    expect(cpf.validate(pasted).success).toBe(false);
   });
 
   it("throws a TypeError for invalid type input", () => {

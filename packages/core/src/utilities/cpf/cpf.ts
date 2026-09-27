@@ -104,17 +104,23 @@ export function format(value: string): string {
 }
 
 /**
- * Progressively formats a CPF while typing using the pattern `XXX.XXX.XXX-XX`.
+ * Displays an editable CPF field using the pattern `XXX.XXX.XXX-XX`.
+ * Keeps only ASCII digits, takes the first 11, and inserts each separator only
+ * when the following segment has a digit. Empty and partial strings are accepted.
+ * This is lossy UI behavior, not parsing or validation: validate the original
+ * submitted value, not this output. No checksum check occurs.
  *
- * @param value - CPF value in any form (formatted, unformatted, or mixed).
- * @returns A progressively formatted CPF string.
+ * @param value - The current input-field string.
+ * @returns The progressively formatted display string.
  * @throws {TypeError} If the provided value is not a string.
  *
  * @example
  * ```TypeScript
  * formatAsYouType("5226"); // "522.6"
+ * formatAsYouType("5226394462"); // "522.639.446-2"
  * formatAsYouType("52263944621"); // "522.639.446-21"
  * formatAsYouType("522.639.446-21"); // "522.639.446-21"
+ * formatAsYouType("abc522639446219"); // "522.639.446-21" (lossy)
  * ```
  */
 export function formatAsYouType(value: string): string {

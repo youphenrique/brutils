@@ -115,10 +115,14 @@ export function format(value: string, options: CepFormatOptions = {}): string {
 }
 
 /**
- * Progressively formats a CEP while typing using the pattern `XXXXX-XXX`.
+ * Displays an editable CEP field using the pattern `XXXXX-XXX`.
+ * Keeps only ASCII digits, takes the first eight, and inserts `-` only when
+ * a sixth digit exists. Empty and partial strings are accepted. This is lossy
+ * UI behavior, not parsing or validation: validate the original submitted
+ * value, not this output.
  *
- * @param value - CEP value in any form.
- * @returns A progressively formatted CEP string.
+ * @param value - The current input-field string.
+ * @returns The progressively formatted display string.
  * @throws {TypeError} If the provided value is not a string.
  *
  * @example
@@ -132,7 +136,7 @@ export function format(value: string, options: CepFormatOptions = {}): string {
 export function formatAsYouType(value: string): string {
   if (typeof value !== "string") {
     throw new TypeError(
-      `Expected a string for CEP format, but received ${value === null ? "null" : typeof value}`,
+      `Expected a string for CEP formatAsYouType, but received ${value === null ? "null" : typeof value}`,
     );
   }
 
