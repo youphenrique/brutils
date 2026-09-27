@@ -5,11 +5,11 @@ packages:
   - docs
 
 allowBuilds:
-  "0": "@parcel/watcher"
-  "1": better-sqlite3
-  "2": esbuild
-  "3": sharp
-  "4": vue-demi
+  "@parcel/watcher": true
+  better-sqlite3: true
+  esbuild: true
+  sharp: true
+  vue-demi: true
 
 catalog:
   "@types/node": ^24
