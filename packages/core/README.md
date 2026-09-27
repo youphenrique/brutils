@@ -19,7 +19,7 @@ Brazilian data utilities for TypeScript.
 
 `format` changes only a string of exactly 11 ASCII digits. It leaves every other string unchanged, including an already canonical CPF, and does not check the checksum or pad partial input. A formatted return value is no proof of validity. Use `cpf.formatAsYouType` to display partial input while typing.
 
-`cpf.mask` displays a complete CPF with hidden digits. It accepts exactly 11 ASCII digits or the canonical `###.###.###-##` shape without checking the checksum. The default `"suffix"` strategy reveals only the last two digits; `"prefix-suffix"` reveals the first three and last two; `"redacted"` hides every digit. The optional `char` replaces each hidden digit and defaults to `"*"`:
+`cpf.mask` displays a complete CPF with hidden digits. It accepts exactly 11 ASCII digits or the canonical `###.###.###-##` shape without checking the checksum. The default `"suffix"` strategy reveals only the last two digits; `"prefix-suffix"` reveals the first three and last two; `"redacted"` hides every digit. The optional `char` replaces each hidden digit and defaults to `"*"`. It must be exactly one visible Unicode code point (counted by code point, not grapheme, so `"🔒"` is accepted but `"🔒️"` with a variation selector is not) and cannot be a number, whitespace, mark, control, format, or invisible filler character, `.`, or `-`:
 
 ```ts
 cpf.mask("29650899006"); // "***.***.***-06"

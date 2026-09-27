@@ -126,6 +126,11 @@ describe("cpf.mask", () => {
       );
     }
 
+    expect(() => cpf.mask("29650899006", { strategy: "redact" } as never)).toThrow(
+      'Expected CPF mask strategy to be one of "suffix", "prefix-suffix", "redacted", but received "redact"',
+    );
+    expect(() => cpf.mask("29650899006", { char: 1 } as never)).toThrow(/but received number$/);
+
     for (const char of [
       "",
       "##",
@@ -140,6 +145,12 @@ describe("cpf.mask", () => {
       "\u200d",
       "\u0000",
       "\ud800",
+      "\udc00",
+      "\u3164",
+      "\uffa0",
+      "\u2800",
+      "\ue000",
+      "\u0378",
       ".",
       "-",
       1,

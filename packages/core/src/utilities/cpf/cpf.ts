@@ -1,7 +1,7 @@
 import { assertOptions } from "../../common/assert.ts";
 import { formatProgressive } from "../../common/format.ts";
 import { CPF_FORMATTED_PATTERN, CPF_LENGTH, CPF_RAW_PATTERN, UFS_REGION_MAP } from "./constants";
-import { CpfError, randomDigit, computeCheckDigit, assertValid } from "./utils";
+import { CpfError, randomDigit, computeCheckDigit, assertValid, assertMaskOptions } from "./utils";
 import type { CpfGenerateOptions, CpfMaskOptions, CpfValidateResult } from "./types";
 
 /**
@@ -35,7 +35,9 @@ export function normalize(value: string): string {
  * This is display masking, not anonymization.
  *
  * @param value - A raw or canonically formatted CPF string.
- * @param options - Optional mask character and visibility strategy.
+ * @param options - Optional visibility `strategy` (`"suffix"`, `"prefix-suffix"`, or `"redacted"`) and
+ *   mask `char`. `char` must be exactly one visible Unicode code point (checked by code point, not
+ *   grapheme) other than a number, whitespace, mark, control/format character, `.`, or `-`.
  * @returns The masked CPF, or `null` for malformed strings. Handle `null` with a neutral placeholder, never the original value.
  * @throws {TypeError} If the value, options, strategy, or character is invalid.
  *
@@ -56,23 +58,10 @@ export function mask(value: string, options: CpfMaskOptions = {}): string | null
   }
 
   assertOptions(options);
+
   const { char = "*", strategy = "suffix" } = options;
 
-  if (strategy !== "suffix" && strategy !== "prefix-suffix" && strategy !== "redacted") {
-    throw new TypeError(
-      'Expected CPF mask strategy to be "suffix", "prefix-suffix", or "redacted".',
-    );
-  }
-
-  if (
-    typeof char !== "string" ||
-    Array.from(char).length !== 1 ||
-    /[\p{N}\p{White_Space}\p{M}\p{Cc}\p{Cf}\p{Cs}.-]/u.test(char)
-  ) {
-    throw new TypeError(
-      "Expected CPF mask char to be one visible Unicode code point other than a number, mark, or separator.",
-    );
-  }
+  assertMaskOptions(strategy, char);
 
   const isRaw = value.length === CPF_LENGTH && CPF_RAW_PATTERN.test(value);
   const isFormatted = value.length === CPF_LENGTH + 3 && CPF_FORMATTED_PATTERN.test(value);

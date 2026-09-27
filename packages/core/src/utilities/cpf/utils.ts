@@ -1,5 +1,10 @@
-import type { CpfErrorCode } from "./types";
-import { CPF_FORMATTED_PATTERN, CPF_RAW_PATTERN } from "./constants";
+import type { CpfErrorCode, CpfMaskStrategy } from "./types";
+import {
+  CPF_FORMATTED_PATTERN,
+  CPF_MASK_CHAR_FORBIDDEN_PATTERN,
+  CPF_MASK_STRATEGIES,
+  CPF_RAW_PATTERN,
+} from "./constants";
 
 export class CpfError extends Error {
   constructor(
@@ -55,5 +60,36 @@ export function assertValid(value: string): void {
   const secondCheckDigit = calculateCheckDigit(normalized, [11, 10, 9, 8, 7, 6, 5, 4, 3, 2]);
   if (secondCheckDigit !== Number(normalized[10])) {
     throw new CpfError("INVALID_CHECKSUM", "Invalid CPF check digits.");
+  }
+}
+
+function describeReceived(value: unknown): string {
+  if (typeof value === "string") return JSON.stringify(value);
+  return value === null ? "null" : typeof value;
+}
+
+/**
+ * Throws a TypeError unless `strategy` is a known mask strategy and `char` is exactly one
+ * visible Unicode code point that is not a number, mark, or CPF separator.
+ * Used internally by cpf.mask().
+ */
+export function assertMaskOptions(
+  strategy: unknown,
+  char: unknown,
+): asserts strategy is CpfMaskStrategy {
+  if (!CPF_MASK_STRATEGIES.includes(strategy as CpfMaskStrategy)) {
+    throw new TypeError(
+      `Expected CPF mask strategy to be one of ${CPF_MASK_STRATEGIES.map((s) => `"${s}"`).join(", ")}, but received ${describeReceived(strategy)}`,
+    );
+  }
+
+  if (
+    typeof char !== "string" ||
+    Array.from(char).length !== 1 ||
+    CPF_MASK_CHAR_FORBIDDEN_PATTERN.test(char)
+  ) {
+    throw new TypeError(
+      `Expected CPF mask char to be one visible Unicode code point other than a number, mark, or separator, but received ${describeReceived(char)}`,
+    );
   }
 }
