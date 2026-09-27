@@ -1,4 +1,4 @@
-import type { CPF_MASK_STRATEGIES, UFS_REGION_MAP } from "./constants";
+import type { CPF_MASK_MODES, UFS_REGION_MAP } from "./constants";
 import type { CpfError } from "./utils";
 
 export type CpfErrorCode =
@@ -16,9 +16,9 @@ export interface CpfGenerateOptions {
   formatted?: boolean;
 }
 
-export type CpfMaskStrategy = (typeof CPF_MASK_STRATEGIES)[number];
+export type CpfMaskMode = (typeof CPF_MASK_MODES)[number];
 
 export type CpfMaskOptions = {
   char?: string;
-  strategy?: CpfMaskStrategy;
+  mode?: CpfMaskMode;
 };

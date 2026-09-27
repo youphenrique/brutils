@@ -35,18 +35,18 @@ export function normalize(value: string): string {
  * This is display masking, not anonymization.
  *
  * @param value - A raw or canonically formatted CPF string.
- * @param options - Optional visibility `strategy` (`"suffix"`, `"prefix-suffix"`, or `"redacted"`) and
+ * @param options - Optional visibility `mode` (`"suffix"`, `"prefix-suffix"`, or `"redacted"`) and
  *   mask `char`. `char` must be exactly one visible Unicode code point (checked by code point, not
  *   grapheme) other than a number, whitespace, mark, control/format character, `.`, or `-`.
  * @returns The masked CPF, or `null` for malformed strings. Handle `null` with a neutral placeholder, never the original value.
- * @throws {TypeError} If the value, options, strategy, or character is invalid.
+ * @throws {TypeError} If the value, options, mode, or character is invalid.
  *
  * @example
  * ```TypeScript
  * mask("52263944621"); // "***.***.***-21"
  * mask("522.639.446-21"); // "***.***.***-21"
- * mask("52263944621", { strategy: "prefix-suffix" }); // "522.***.***-21"
- * mask("52263944621", { strategy: "redacted", char: "#" }); // "###.###.###-##"
+ * mask("52263944621", { mode: "prefix-suffix" }); // "522.***.***-21"
+ * mask("52263944621", { mode: "redacted", char: "#" }); // "###.###.###-##"
  * mask("5226"); // null
  * ```
  */
@@ -59,9 +59,9 @@ export function mask(value: string, options: CpfMaskOptions = {}): string | null
 
   assertOptions(options);
 
-  const { char = "*", strategy = "suffix" } = options;
+  const { char = "*", mode = "suffix" } = options;
 
-  assertMaskOptions(strategy, char);
+  assertMaskOptions(mode, char);
 
   const isRaw = value.length === CPF_LENGTH && CPF_RAW_PATTERN.test(value);
   const isFormatted = value.length === CPF_LENGTH + 3 && CPF_FORMATTED_PATTERN.test(value);
@@ -71,8 +71,8 @@ export function mask(value: string, options: CpfMaskOptions = {}): string | null
   }
 
   const hiddenGroup = char.repeat(3);
-  const prefix = strategy === "prefix-suffix" ? value.slice(0, 3) : hiddenGroup;
-  const suffix = strategy === "redacted" ? char.repeat(2) : value.slice(-2);
+  const prefix = mode === "prefix-suffix" ? value.slice(0, 3) : hiddenGroup;
+  const suffix = mode === "redacted" ? char.repeat(2) : value.slice(-2);
 
   return `${prefix}.${hiddenGroup}.${hiddenGroup}-${suffix}`;
 }

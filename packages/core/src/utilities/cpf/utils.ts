@@ -1,8 +1,8 @@
-import type { CpfErrorCode, CpfMaskStrategy } from "./types";
+import type { CpfErrorCode, CpfMaskMode } from "./types";
 import {
   CPF_FORMATTED_PATTERN,
   CPF_MASK_CHAR_FORBIDDEN_PATTERN,
-  CPF_MASK_STRATEGIES,
+  CPF_MASK_MODES,
   CPF_RAW_PATTERN,
 } from "./constants";
 
@@ -69,17 +69,14 @@ function describeReceived(value: unknown): string {
 }
 
 /**
- * Throws a TypeError unless `strategy` is a known mask strategy and `char` is exactly one
+ * Throws a TypeError unless `mode` is a known mask mode and `char` is exactly one
  * visible Unicode code point that is not a number, mark, or CPF separator.
  * Used internally by cpf.mask().
  */
-export function assertMaskOptions(
-  strategy: unknown,
-  char: unknown,
-): asserts strategy is CpfMaskStrategy {
-  if (!CPF_MASK_STRATEGIES.includes(strategy as CpfMaskStrategy)) {
+export function assertMaskOptions(mode: unknown, char: unknown): asserts mode is CpfMaskMode {
+  if (!CPF_MASK_MODES.includes(mode as CpfMaskMode)) {
     throw new TypeError(
-      `Expected CPF mask strategy to be one of ${CPF_MASK_STRATEGIES.map((s) => `"${s}"`).join(", ")}, but received ${describeReceived(strategy)}`,
+      `Expected CPF mask mode to be one of ${CPF_MASK_MODES.map((s) => `"${s}"`).join(", ")}, but received ${describeReceived(mode)}`,
     );
   }
 

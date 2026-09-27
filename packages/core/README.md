@@ -27,12 +27,12 @@ Node.js 24.13.1 or newer within the Node.js 24 release line is supported. Other 
 
 The CNPJ and CEP typing helpers follow the same display-only policy. `cep.formatAsYouType` keeps the first eight ASCII digits and adds `-` when a sixth digit exists. `cnpj.formatAsYouType` removes non-ASCII alphanumeric characters, uppercases letters, keeps the first 12 base characters, then keeps the first two ASCII digits from the remaining characters for its check-digit positions. Both accept empty and partial strings, discard excess characters, and insert separators only when the next segment exists. Use `cnpj.validate` or `cep.validate` on the original submitted string. There is currently no phone utility in `@brutils/core` to which this policy can be applied.
 
-`cpf.mask` displays a complete CPF with hidden digits. It accepts exactly 11 ASCII digits or the canonical `###.###.###-##` shape without checking the checksum. The default `"suffix"` strategy reveals only the last two digits; `"prefix-suffix"` reveals the first three and last two; `"redacted"` hides every digit. The optional `char` replaces each hidden digit and defaults to `"*"`. It must be exactly one visible Unicode code point (counted by code point, not grapheme, so `"🔒"` is accepted but `"🔒️"` with a variation selector is not) and cannot be a number, whitespace, mark, control, format, or invisible filler character, `.`, or `-`:
+`cpf.mask` displays a complete CPF with hidden digits. It accepts exactly 11 ASCII digits or the canonical `###.###.###-##` shape without checking the checksum. The default `"suffix"` mode reveals only the last two digits; `"prefix-suffix"` reveals the first three and last two; `"redacted"` hides every digit. The optional `char` replaces each hidden digit and defaults to `"*"`. It must be exactly one visible Unicode code point (counted by code point, not grapheme, so `"🔒"` is accepted but `"🔒️"` with a variation selector is not) and cannot be a number, whitespace, mark, control, format, or invisible filler character, `.`, or `-`:
 
 ```ts
 cpf.mask("29650899006"); // "***.***.***-06"
-cpf.mask("29650899006", { strategy: "prefix-suffix" }); // "296.***.***-06"
-cpf.mask("29650899006", { strategy: "redacted", char: "#" }); // "###.###.###-##"
+cpf.mask("29650899006", { mode: "prefix-suffix" }); // "296.***.***-06"
+cpf.mask("29650899006", { mode: "redacted", char: "#" }); // "###.###.###-##"
 ```
 
 Empty, partial, overlong, or malformed strings return `null`. Non-string CPF values, invalid options containers, and invalid option values throw `TypeError`. If masking returns `null`, show a neutral placeholder or handle invalid input separately; never display the original value as a fallback. This mask is for display, not anonymization: even `"redacted"` reveals that the input has CPF shape. Use `cpf.format` for complete-number formatting and `cpf.formatAsYouType` for partial input while typing.
