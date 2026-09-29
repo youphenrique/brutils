@@ -27,16 +27,6 @@ export function computeCheckDigit(digits: number[], weightStart: number): number
   return remainder < 2 ? 0 : 11 - remainder;
 }
 
-export function calculateCheckDigit(digits: string, weights: number[]): number {
-  const sum = weights.reduce((acc, weight, index) => {
-    return acc + Number(digits[index]) * weight;
-  }, 0);
-
-  const remainder = sum % 11;
-
-  return remainder < 2 ? 0 : 11 - remainder;
-}
-
 /**
  * Core validator — always throws CpfError on failure, never returns false.
  * Used internally by cpf.validate().
@@ -52,13 +42,15 @@ export function assertValid(value: string): void {
     throw new CpfError("REPEATED_DIGITS", "CPF cannot contain all identical digits.");
   }
 
-  const firstCheckDigit = calculateCheckDigit(normalized, [10, 9, 8, 7, 6, 5, 4, 3, 2]);
-  if (firstCheckDigit !== Number(normalized[9])) {
+  const digits = Array.from(normalized, Number);
+
+  const firstCheckDigit = computeCheckDigit(digits.slice(0, 9), 10);
+  if (firstCheckDigit !== digits[9]) {
     throw new CpfError("INVALID_CHECKSUM", "Invalid CPF check digits.");
   }
 
-  const secondCheckDigit = calculateCheckDigit(normalized, [11, 10, 9, 8, 7, 6, 5, 4, 3, 2]);
-  if (secondCheckDigit !== Number(normalized[10])) {
+  const secondCheckDigit = computeCheckDigit(digits.slice(0, 10), 11);
+  if (secondCheckDigit !== digits[10]) {
     throw new CpfError("INVALID_CHECKSUM", "Invalid CPF check digits.");
   }
 }

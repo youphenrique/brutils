@@ -164,7 +164,7 @@ export function generate(options: CpfGenerateOptions = {}): string {
   const baseDigits = Array.from({ length: 9 }, randomDigit);
 
   if (baseDigits.every((digit) => digit === baseDigits[0])) {
-    const rerollIndex = Math.floor(Math.random() * 8);
+    const rerollIndex = Math.floor(Math.random() * baseDigits.length);
 
     let rerolled = randomDigit();
     while (rerolled === baseDigits[8]) {

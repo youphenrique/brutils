@@ -322,16 +322,27 @@ describe("cpf.generate", () => {
     ["00000001406", 0, 5],
     ["00000001830", 8, 1],
     ["00000001910", 10, 0],
-  ])("preserves leading zeroes and computes %s (checksum remainders %i, %i)", (expected) => {
-    const randomSpy = vi.spyOn(Math, "random");
-    for (const digit of expected.slice(0, 9)) {
-      randomSpy.mockReturnValueOnce((Number(digit) + 0.5) / 10);
-    }
+  ])(
+    "preserves leading zeroes and computes %s (checksum remainders %i, %i)",
+    (expected, first, second) => {
+      const remainder = (digits: string, weightStart: number) =>
+        Array.from(digits, Number).reduce(
+          (sum, digit, index) => sum + digit * (weightStart - index),
+          0,
+        ) % 11;
+      expect(remainder(expected.slice(0, 9), 10)).toBe(first);
+      expect(remainder(expected.slice(0, 10), 11)).toBe(second);
 
-    expect(cpf.generate()).toBe(expected);
-    expect(cpf.validate(expected).success).toBe(true);
-    expect(randomSpy).toHaveBeenCalledTimes(9);
-  });
+      const randomSpy = vi.spyOn(Math, "random");
+      for (const digit of expected.slice(0, 9)) {
+        randomSpy.mockReturnValueOnce((Number(digit) + 0.5) / 10);
+      }
+
+      expect(cpf.generate()).toBe(expected);
+      expect(cpf.validate(expected).success).toBe(true);
+      expect(randomSpy).toHaveBeenCalledTimes(9);
+    },
+  );
 
   it("preserves leading zeroes in formatted output", () => {
     const randomSpy = vi.spyOn(Math, "random");
@@ -374,7 +385,20 @@ describe("cpf.generate", () => {
     },
   );
 
-  it.each([null, "true", "false", "", 0, 1, {}, [], Boolean(false)])(
+  it.each([
+    { uf: "SP" },
+    { uf: "ZZ" },
+    { uf: undefined },
+    { region: 8 },
+    { uf: "SP", formatted: true },
+  ])("ignores unsupported region options %j", (options) => {
+    const generated = cpf.generate(options as any);
+
+    expect(generated).toMatch(options.formatted ? /^\d{3}\.\d{3}\.\d{3}-\d{2}$/ : /^\d{11}$/);
+    expect(cpf.validate(generated).success).toBe(true);
+  });
+
+  it.each([null, "true", "false", "", 0, 1, {}, [], Object(false)])(
     "rejects non-boolean formatted value %j before drawing digits",
     (formatted) => {
       const randomSpy = vi.spyOn(Math, "random");
