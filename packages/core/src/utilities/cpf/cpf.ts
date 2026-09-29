@@ -144,7 +144,7 @@ export function formatAsYouType(value: string): string {
  * @param options - Optional generation options:
  * - `formatted`: A boolean; if `true`, returns `XXX.XXX.XXX-XX`.
  * @returns An 11-digit CPF string, with punctuation when requested.
- * @throws {TypeError} If options are invalid, formatted is not a boolean, or uf/region is provided.
+ * @throws {TypeError} If options are invalid, formatted is not a boolean.
  *
  * @example
  * ```TypeScript
@@ -154,10 +154,6 @@ export function formatAsYouType(value: string): string {
  */
 export function generate(options: CpfGenerateOptions = {}): string {
   assertOptions(options);
-
-  if ("uf" in options || "region" in options) {
-    throw new TypeError("CPF generation does not support uf or region options.");
-  }
 
   const { formatted = false } = options;
 

@@ -374,7 +374,7 @@ describe("cpf.generate", () => {
     },
   );
 
-  it.each([null, "true", "false", "", 0, 1, {}, [], new Boolean(false)])(
+  it.each([null, "true", "false", "", 0, 1, {}, [], Boolean(false)])(
     "rejects non-boolean formatted value %j before drawing digits",
     (formatted) => {
       const randomSpy = vi.spyOn(Math, "random");
@@ -385,26 +385,6 @@ describe("cpf.generate", () => {
       expect(randomSpy).not.toHaveBeenCalled();
     },
   );
-
-  it.each([
-    { uf: "SP" },
-    { uf: "ZZ" },
-    { uf: undefined },
-    { uf: null },
-    { region: 8 },
-    { region: "invalid" },
-    { region: undefined },
-    { uf: "SP", formatted: true },
-    Object.create({ uf: "SP" }),
-    Object.create({ region: 8 }),
-  ])("rejects unsupported region options %j before drawing digits", (options) => {
-    const randomSpy = vi.spyOn(Math, "random");
-
-    expect(() => cpf.generate(options as any)).toThrow(
-      new TypeError("CPF generation does not support uf or region options."),
-    );
-    expect(randomSpy).not.toHaveBeenCalled();
-  });
 });
 
 describe("cpf.formatAsYouType", () => {
