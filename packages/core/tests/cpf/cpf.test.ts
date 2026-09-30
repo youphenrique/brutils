@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vite-plus/test";
+import { afterEach, describe, expect, expectTypeOf, it, vi } from "vite-plus/test";
 
 import { cpf } from "../../src/index.ts";
 import { CpfError } from "../../src/utilities/cpf";
@@ -295,70 +295,107 @@ describe("CpfError", () => {
 });
 
 describe("cpf.generate", () => {
-  it("always generates a valid 11-digit CPF", () => {
-    const generated = cpf.generate();
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
 
-    expect(generated).toMatch(/^\d{11}$/);
+  it("exposes only an optional boolean formatted option", () => {
+    expectTypeOf<keyof cpf.CpfGenerateOptions>().toEqualTypeOf<"formatted">();
+    expectTypeOf<cpf.CpfGenerateOptions["formatted"]>().toEqualTypeOf<boolean | undefined>();
+  });
+
+  it.each([undefined, {}, { formatted: undefined }, { formatted: false }, { formatted: true }])(
+    "generates a structurally valid CPF with options %j",
+    (options) => {
+      const generated = cpf.generate(options);
+
+      expect(generated).toMatch(options?.formatted ? /^\d{3}\.\d{3}\.\d{3}-\d{2}$/ : /^\d{11}$/);
+      expect(cpf.validate(generated).success).toBe(true);
+    },
+  );
+
+  it.each([
+    ["00000000191", 2, 10],
+    ["00000000515", 10, 6],
+    ["00000000604", 1, 7],
+    ["00000000949", 7, 2],
+    ["00000001406", 0, 5],
+    ["00000001830", 8, 1],
+    ["00000001910", 10, 0],
+  ])(
+    "preserves leading zeroes and computes %s (checksum remainders %i, %i)",
+    (expected, first, second) => {
+      const remainder = (digits: string, weightStart: number) =>
+        Array.from(digits, Number).reduce(
+          (sum, digit, index) => sum + digit * (weightStart - index),
+          0,
+        ) % 11;
+      expect(remainder(expected.slice(0, 9), 10)).toBe(first);
+      expect(remainder(expected.slice(0, 10), 11)).toBe(second);
+
+      const randomSpy = vi.spyOn(Math, "random");
+      for (const digit of expected.slice(0, 9)) {
+        randomSpy.mockReturnValueOnce((Number(digit) + 0.5) / 10);
+      }
+
+      expect(cpf.generate()).toBe(expected);
+      expect(cpf.validate(expected).success).toBe(true);
+      expect(randomSpy).toHaveBeenCalledTimes(9);
+    },
+  );
+
+  it("preserves leading zeroes in formatted output", () => {
+    const randomSpy = vi.spyOn(Math, "random");
+    for (const digit of "000000001") {
+      randomSpy.mockReturnValueOnce((Number(digit) + 0.5) / 10);
+    }
+
+    const generated = cpf.generate({ formatted: true });
+
+    expect(generated).toBe("000.000.001-91");
     expect(cpf.validate(generated).success).toBe(true);
   });
 
-  it("forces 9th digit to 8 for SP", () => {
-    for (let i = 0; i < 100; i += 1) {
-      expect(cpf.generate({ uf: "SP" })[8]).toBe("8");
-    }
-  });
+  it.each(Array.from({ length: 10 }, (_, digit) => digit))(
+    "rerolls an all-%i base until a different digit is drawn",
+    (digit) => {
+      const randomSpy = vi.spyOn(Math, "random");
+      const repeated = (digit + 0.5) / 10;
+      const replacement = (digit + 1) % 10;
+      for (let i = 0; i < 9; i += 1) {
+        randomSpy.mockReturnValueOnce(repeated);
+      }
+      randomSpy
+        .mockReturnValueOnce(0)
+        .mockReturnValueOnce(repeated)
+        .mockReturnValueOnce((replacement + 0.5) / 10);
 
-  it("forces 9th digit to 1 for GO and DF", () => {
-    for (let i = 0; i < 100; i += 1) {
-      expect(cpf.generate({ uf: "GO" })[8]).toBe("1");
-      expect(cpf.generate({ uf: "DF" })[8]).toBe("1");
-    }
-  });
-
-  it("all-same-digit guard never mutates index 8", () => {
-    const randomSpy = vi.spyOn(Math, "random");
-
-    randomSpy
-      .mockReturnValueOnce(0.2)
-      .mockReturnValueOnce(0.2)
-      .mockReturnValueOnce(0.2)
-      .mockReturnValueOnce(0.2)
-      .mockReturnValueOnce(0.2)
-      .mockReturnValueOnce(0.2)
-      .mockReturnValueOnce(0.2)
-      .mockReturnValueOnce(0.2)
-      .mockReturnValueOnce(0.6)
-      .mockReturnValueOnce(0.3);
-
-    const generated = cpf.generate({ uf: "AC" });
-
-    expect(generated[8]).toBe("2");
-
-    randomSpy.mockRestore();
-  });
-
-  it("returns formatted CPF when requested", () => {
-    expect(cpf.generate({ formatted: true })).toMatch(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/);
-  });
-
-  it("never generates all-same-digit CPF across 1000 runs", () => {
-    for (let i = 0; i < 1000; i += 1) {
       const generated = cpf.generate();
-      expect(/^([0-9])\1{10}$/.test(generated)).toBe(false);
-    }
-  });
 
-  it("accepts undefined options and uses defaults", () => {
-    expect(cpf.generate(undefined)).toMatch(/^\d{11}$/);
-  });
+      expect(generated.slice(0, 9)).toBe(String(replacement) + String(digit).repeat(8));
+      expect(cpf.validate(generated).success).toBe(true);
+      expect(randomSpy).toHaveBeenCalledTimes(12);
+    },
+  );
 
-  it("throws a TypeError for invalid options type", () => {
-    expect(() => cpf.generate(null as any)).toThrow(TypeError);
-    expect(() => cpf.generate(123 as any)).toThrow(TypeError);
-    expect(() => cpf.generate("x" as any)).toThrow(TypeError);
-    expect(() => cpf.generate(true as any)).toThrow(TypeError);
-    expect(() => cpf.generate([] as any)).toThrow(TypeError);
-  });
+  it.each([null, 123, "x", true, [], () => {}])(
+    "throws a TypeError for invalid options container %j",
+    (options) => {
+      expect(() => cpf.generate(options as any)).toThrow(TypeError);
+    },
+  );
+
+  it.each([null, "true", "false", "", 0, 1, {}, [], Object(false)])(
+    "rejects non-boolean formatted value %j before drawing digits",
+    (formatted) => {
+      const randomSpy = vi.spyOn(Math, "random");
+
+      expect(() => cpf.generate({ formatted } as any)).toThrow(
+        new TypeError("Expected CPF generate formatted to be a boolean."),
+      );
+      expect(randomSpy).not.toHaveBeenCalled();
+    },
+  );
 });
 
 describe("cpf.formatAsYouType", () => {

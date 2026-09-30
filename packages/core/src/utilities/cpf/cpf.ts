@@ -1,6 +1,6 @@
 import { assertOptions } from "../../common/assert.ts";
 import { formatProgressive } from "../../common/format.ts";
-import { CPF_FORMATTED_PATTERN, CPF_LENGTH, CPF_RAW_PATTERN, UFS_REGION_MAP } from "./constants";
+import { CPF_FORMATTED_PATTERN, CPF_LENGTH, CPF_RAW_PATTERN } from "./constants";
 import { CpfError, randomDigit, computeCheckDigit, assertValid, assertMaskOptions } from "./utils";
 import type { CpfGenerateOptions, CpfMaskOptions, CpfValidateResult } from "./types";
 
@@ -136,40 +136,35 @@ export function formatAsYouType(value: string): string {
 }
 
 /**
- * Generates a random, valid CPF.
- *
- * By default, it returns an unformatted 11-digit string. When `state` is
- * provided, the 9th digit (index 8) is forced to the corresponding regional
- * digit according to `STATES_REGION_MAP\`.
- *
- * Generation rules:
- * - Creates 8 random digits for indices `0..7`.
- * - Sets index `8` from state mapping or random digit.
- * - Applies an all-same-digit guard by re-rolling one digit in indices `0..7`.
- * - Computes both check digits using CPF checksum weights.
+ * Generates a random CPF with valid check digits for test fixtures.
+ * Generated values can coincide with real assigned CPFs. Uses Math.random,
+ * which is not cryptographically secure; do not use as an identity or secret.
+ * Region control is not supported.
  *
  * @param options - Optional generation options:
- * - `state`: Brazilian state code used to force the CPF 9th digit region.
- * - `formatted`: If `true`, returns CPF masked as `###.###.###-##`.
- * @returns A valid CPF string, formatted or unformatted.
+ * - `formatted`: A boolean; if `true`, returns `XXX.XXX.XXX-XX`.
+ * @returns An 11-digit CPF string, with punctuation when requested.
+ * @throws {TypeError} If options are invalid, formatted is not a boolean.
  *
  * @example
  * ```TypeScript
  * generate(); // "12345678909"
  * generate({ formatted: true }); // "123.456.789-09"
- * generate({ state: "SP" }); // 9th digit is always "8"
  * ```
  */
 export function generate(options: CpfGenerateOptions = {}): string {
   assertOptions(options);
 
-  const { uf, formatted = false } = options;
+  const { formatted = false } = options;
 
-  const baseDigits = Array.from({ length: 8 }, randomDigit);
-  baseDigits.push(uf !== undefined ? UFS_REGION_MAP[uf] : randomDigit());
+  if (typeof formatted !== "boolean") {
+    throw new TypeError("Expected CPF generate formatted to be a boolean.");
+  }
+
+  const baseDigits = Array.from({ length: 9 }, randomDigit);
 
   if (baseDigits.every((digit) => digit === baseDigits[0])) {
-    const rerollIndex = Math.floor(Math.random() * 8);
+    const rerollIndex = Math.floor(Math.random() * baseDigits.length);
 
     let rerolled = randomDigit();
     while (rerolled === baseDigits[8]) {

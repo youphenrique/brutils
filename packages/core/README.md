@@ -39,6 +39,14 @@ Empty, partial, overlong, or malformed strings return `null`. Non-string CPF val
 
 `validate` accepts only 11 ASCII digits or exact canonical punctuation. Length and syntax failures both use `INVALID_FORMAT`; repeated digits use `REPEATED_DIGITS`, and other well-shaped invalid values use `INVALID_CHECKSUM`.
 
+### CPF generation
+
+`cpf.generate(options?: { formatted?: boolean }): string` creates test fixtures with valid CPF check digits. It returns 11 digits by default, preserving leading zeroes; `{ formatted: true }` adds punctuation as `XXX.XXX.XXX-XX`. Omitted or `undefined` options and `formatted` use the default. Invalid options containers and non-boolean `formatted` values throw `TypeError`.
+
+Region control is excluded from the 1.0 API. The former `uf` option and `UFS_REGION_MAP` export are removed: the ninth digit describes the fiscal region at initial registration and does not identify a person's current state. TypeScript flags `uf` and `region` in object literals as unknown properties; JavaScript callers passing them get no error, and the options are ignored (the ninth digit is random). Remove those options when migrating.
+
+Generation uses `Math.random`, which is not cryptographically secure. Generated CPFs can coincide with real assigned numbers. Use them as test fixtures, never as identities or secrets.
+
 ### Decisions
 
 - `normalize` keeps its name and stays permissive digit extraction. No separate extraction helper is added; the lossy behavior is documented above instead.
