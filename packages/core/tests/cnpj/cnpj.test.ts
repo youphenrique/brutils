@@ -168,7 +168,7 @@ describe("cnpj.validate", () => {
   });
 });
 
-describe("cnpj.validate contract", () => {
+describe("cnpj.validate", () => {
   afterEach(() => vi.restoreAllMocks());
 
   it.each(

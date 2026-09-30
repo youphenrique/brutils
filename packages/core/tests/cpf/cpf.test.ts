@@ -267,7 +267,7 @@ describe("cpf.validate", () => {
   });
 });
 
-describe("cpf.validate contract", () => {
+describe("cpf.validate", () => {
   afterEach(() => vi.restoreAllMocks());
 
   it.each(

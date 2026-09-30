@@ -59,7 +59,7 @@ describe("cep.validate", () => {
   });
 });
 
-describe("cep.validate contract", () => {
+describe("cep.validate", () => {
   it.each(
     [
       null,
