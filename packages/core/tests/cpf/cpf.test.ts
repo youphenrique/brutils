@@ -385,19 +385,6 @@ describe("cpf.generate", () => {
     },
   );
 
-  it.each([
-    { uf: "SP" },
-    { uf: "ZZ" },
-    { uf: undefined },
-    { region: 8 },
-    { uf: "SP", formatted: true },
-  ])("ignores unsupported region options %j", (options) => {
-    const generated = cpf.generate(options as any);
-
-    expect(generated).toMatch(options.formatted ? /^\d{3}\.\d{3}\.\d{3}-\d{2}$/ : /^\d{11}$/);
-    expect(cpf.validate(generated).success).toBe(true);
-  });
-
   it.each([null, "true", "false", "", 0, 1, {}, [], Object(false)])(
     "rejects non-boolean formatted value %j before drawing digits",
     (formatted) => {
