@@ -1,5 +1,6 @@
 import { assertOptions } from "../../common/assert.ts";
 import { formatProgressive } from "../../common/format.ts";
+import { runValidation } from "../../common/validate.ts";
 import {
   CEP_LENGTH,
   CEP_RAW_PATTERN,
@@ -38,11 +39,11 @@ export function normalize(value: string): string {
 }
 
 /**
- * Validates a CEP string.
+ * Validates CEP format and repeated digits without checking postal assignment.
  *
  * @param value - CEP value to validate.
  * @returns `{ success: true, error: null }` if valid; `{ success: false, error: CepValidationError }` if invalid.
- * @throws {TypeError} If the provided value is not a string.
+ * Non-string values return `INVALID_TYPE`. Unexpected internal exceptions are rethrown.
  *
  * @example
  * ```TypeScript
@@ -52,30 +53,8 @@ export function normalize(value: string): string {
  * validate("01001-A00"); // { success: false, error: CepValidationError }
  * ```
  */
-export function validate(value: string): CepValidationResult {
-  if (typeof value !== "string") {
-    throw new TypeError(
-      `Expected a string for CEP validation, but received ${value === null ? "null" : typeof value}`,
-    );
-  }
-
-  try {
-    assertValid(value);
-
-    return { success: true, error: null };
-  } catch (error) {
-    if (error instanceof CepValidationError) {
-      return { success: false, error };
-    }
-
-    return {
-      success: false,
-      error: new CepValidationError(
-        "UNKNOWN_ERROR",
-        "An unexpected error occurred during validation.",
-      ),
-    };
-  }
+export function validate(value: unknown): CepValidationResult {
+  return runValidation(value, "CEP", CepValidationError, assertValid);
 }
 
 /**
@@ -151,8 +130,7 @@ export function formatAsYouType(value: string): string {
  * @param value - The CEP string to resolve.
  * @param options - Optional configuration for provider resolution, caching, timeout, and strategy.
  * @returns A promise that resolves to the address details.
- * @throws {TypeError} If the provided value is not a string.
- * @throws {CepValidationError} If the CEP is invalid.
+ * @throws {CepValidationError} If the value is not a string (`INVALID_TYPE`) or the CEP is invalid.
  * @throws {CepNotFoundError} If the CEP is not found by the providers.
  * @throws {CepProviderError} If all providers fail to respond.
  *

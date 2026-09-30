@@ -124,16 +124,15 @@ import { defineConfig } from "vite-plus/pack"; // for tsdown.config.ts configura
 
 ## Key Conventions
 
-### 1. Validate Functions Return Results, Never Throw
+### 1. Validate Functions Return Results for Expected Invalid Input
 
-Public `validate()` functions must catch errors and return result objects:
+Public `validate(value: unknown)` functions return result objects for expected invalid inputs and rethrow unexpected internal exceptions unchanged:
 
 ```ts
 // ✅ Correct pattern
 validate("123"); // { success: false, error: CpfError("INVALID_FORMAT") }
 
-// Throws only for wrong input type (e.g. not a string)
-validate(123 as any); // throws TypeError
+validate(123); // { success: false, error: CpfError("INVALID_TYPE") }
 ```
 
 ### 2. Error Classes Have a `code` Property
@@ -143,7 +142,7 @@ literal error codes:
 
 ```ts
 export type CpfErrorCode =
-  "INVALID_FORMAT" | "REPEATED_DIGITS" | "INVALID_CHECKSUM" | "UNKNOWN_ERROR";
+  "INVALID_TYPE" | "INVALID_FORMAT" | "REPEATED_DIGITS" | "INVALID_CHECKSUM";
 
 export class CpfError extends Error {
   constructor(

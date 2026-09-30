@@ -5,9 +5,9 @@ export type CpfErrorCode =
   | "INVALID_FORMAT"
   | "REPEATED_DIGITS"
   | "INVALID_CHECKSUM"
-  | "UNKNOWN_ERROR";
+  | "INVALID_TYPE";
 
-export type CpfValidateResult =
+export type CpfValidationResult =
   | { success: true; error: null }
   | { success: false; error: CpfError };
 

@@ -1,10 +1,10 @@
-import { CnpjError } from "./utils";
+import type { CnpjError } from "./utils";
 
 export type CnpjErrorCode =
   | "REPEATED_DIGITS"
   | "INVALID_FORMAT"
   | "INVALID_CHECKSUM"
-  | "UNKNOWN_ERROR";
+  | "INVALID_TYPE";
 
 export type CnpjFormatOptions = {
   pad?: boolean;
@@ -15,6 +15,6 @@ export type CnpjGenerateOptions = {
   alphanumeric?: boolean;
 };
 
-export type CnpjValidateResult =
+export type CnpjValidationResult =
   | { success: true; error: null }
   | { success: false; error: CnpjError };

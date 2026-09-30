@@ -7,4 +7,10 @@ export {
   clearCache,
   resetThrottler,
 } from "./utils";
-export type { AddressResponse, CacheStore, CepValidationResult, GetAddressOptions } from "./types";
+export type {
+  AddressResponse,
+  CacheStore,
+  CepErrorCode,
+  CepValidationResult,
+  GetAddressOptions,
+} from "./types";

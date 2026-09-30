@@ -1,6 +1,6 @@
 import type { CepValidationError } from "./utils";
 
-export type CepErrorCode = "INVALID_FORMAT" | "REPEATED_DIGITS" | "UNKNOWN_ERROR";
+export type CepErrorCode = "INVALID_FORMAT" | "REPEATED_DIGITS" | "INVALID_TYPE";
 
 export type CepFormatOptions = {
   pad?: boolean;
