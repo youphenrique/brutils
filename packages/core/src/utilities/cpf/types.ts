@@ -11,9 +11,6 @@ export type CpfValidationResult =
   | { success: true; error: null }
   | { success: false; error: CpfError };
 
-/** @deprecated Use {@link CpfValidationResult}. */
-export type CpfValidateResult = CpfValidationResult;
-
 export interface CpfGenerateOptions {
   formatted?: boolean;
 }
