@@ -3,7 +3,8 @@ import { defineConfig } from "vite-plus";
 export default defineConfig({
   pack: {
     dts: true,
-    exports: true,
+    // Workspace consumers resolve source; `publishConfig` points published exports at `dist`.
+    exports: { devExports: true },
     // Fail the build on any warning, including publint warnings, so packaging regressions can't slip through.
     failOnWarn: true,
     // Emitted on every build while TypeScript 7's API is experimental; not actionable here.
