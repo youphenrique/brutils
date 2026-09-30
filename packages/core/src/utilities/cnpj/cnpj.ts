@@ -2,7 +2,7 @@ import { assertOptions } from "../../common/assert.ts";
 import { formatProgressive } from "../../common/format.ts";
 import { ALPHANUMERIC_CHARS, DIGIT_CHARS, CNPJ_LENGTH, CNPJ_RAW_PATTERN } from "./constants";
 import { assertValid, calcCheckDigits, CnpjError } from "./utils";
-import type { CnpjFormatOptions, CnpjGenerateOptions, CnpjValidateResult } from "./types";
+import type { CnpjFormatOptions, CnpjGenerateOptions, CnpjValidationResult } from "./types";
 
 function randomFrom(chars: string): string {
   return chars[Math.floor(Math.random() * chars.length)];
@@ -148,11 +148,12 @@ export function generate(options: CnpjGenerateOptions = {}): string {
 }
 
 /**
- * Validates a CNPJ string.
+ * Validates CNPJ format, repeated digits, and checksum.
+ * This does not prove issuance or check Receita Federal cadastral status.
  *
  * @param value - CNPJ value to validate.
  * @returns `{ success: true, error: null }` if valid; `{ success: false, error: CnpjError }` if invalid.
- * @throws {TypeError} If `value` is not a string.
+ * Non-string values return `INVALID_TYPE`. Unexpected internal exceptions are rethrown.
  *
  * @example
  * ```TypeScript
@@ -161,11 +162,12 @@ export function generate(options: CnpjGenerateOptions = {}): string {
  * validate("73$450392000164"); // { success: false, error: CnpjError (INVALID_FORMAT) }
  * ```
  */
-export function validate(value: string): CnpjValidateResult {
+export function validate(value: unknown): CnpjValidationResult {
   if (typeof value !== "string") {
-    throw new TypeError(
-      `Expected a string for CNPJ validate, but received ${value === null ? "null" : typeof value}`,
-    );
+    return {
+      success: false,
+      error: new CnpjError("INVALID_TYPE", "Expected a string for CNPJ validation."),
+    };
   }
 
   try {
@@ -177,9 +179,6 @@ export function validate(value: string): CnpjValidateResult {
       return { success: false, error };
     }
 
-    return {
-      success: false,
-      error: new CnpjError("UNKNOWN_ERROR", "Unexpected CNPJ validation error."),
-    };
+    throw error;
   }
 }

@@ -264,13 +264,6 @@ describe("cpf.validate", () => {
     expect(cpf.validate("422.091.120-01")).toEqual({ success: true, error: null });
     expect(cpf.validate("00000000191")).toEqual({ success: true, error: null });
   });
-
-  it("throws a TypeError for invalid type input", () => {
-    expect(() => cpf.validate(null as any)).toThrow(TypeError);
-    expect(() => cpf.validate(undefined as any)).toThrow(TypeError);
-    expect(() => cpf.validate(12345678909 as any)).toThrow(TypeError);
-    expect(() => cpf.validate({} as any)).toThrow(TypeError);
-  });
 });
 
 describe("CpfError", () => {

@@ -38,11 +38,11 @@ export function normalize(value: string): string {
 }
 
 /**
- * Validates a CEP string.
+ * Validates CEP format and repeated digits without checking postal assignment.
  *
  * @param value - CEP value to validate.
  * @returns `{ success: true, error: null }` if valid; `{ success: false, error: CepValidationError }` if invalid.
- * @throws {TypeError} If the provided value is not a string.
+ * Non-string values return `INVALID_TYPE`. Unexpected internal exceptions are rethrown.
  *
  * @example
  * ```TypeScript
@@ -52,11 +52,12 @@ export function normalize(value: string): string {
  * validate("01001-A00"); // { success: false, error: CepValidationError }
  * ```
  */
-export function validate(value: string): CepValidationResult {
+export function validate(value: unknown): CepValidationResult {
   if (typeof value !== "string") {
-    throw new TypeError(
-      `Expected a string for CEP validation, but received ${value === null ? "null" : typeof value}`,
-    );
+    return {
+      success: false,
+      error: new CepValidationError("INVALID_TYPE", "Expected a string for CEP validation."),
+    };
   }
 
   try {
@@ -68,13 +69,7 @@ export function validate(value: string): CepValidationResult {
       return { success: false, error };
     }
 
-    return {
-      success: false,
-      error: new CepValidationError(
-        "UNKNOWN_ERROR",
-        "An unexpected error occurred during validation.",
-      ),
-    };
+    throw error;
   }
 }
 

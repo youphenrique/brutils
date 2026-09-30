@@ -2,7 +2,7 @@ import { assertOptions } from "../../common/assert.ts";
 import { formatProgressive } from "../../common/format.ts";
 import { CPF_FORMATTED_PATTERN, CPF_LENGTH, CPF_RAW_PATTERN } from "./constants";
 import { CpfError, randomDigit, computeCheckDigit, assertValid, assertMaskOptions } from "./utils";
-import type { CpfGenerateOptions, CpfMaskOptions, CpfValidateResult } from "./types";
+import type { CpfGenerateOptions, CpfMaskOptions, CpfValidationResult } from "./types";
 
 /**
  * Extracts all ASCII digits from a CPF string without validating it.
@@ -187,10 +187,11 @@ export function generate(options: CpfGenerateOptions = {}): string {
  * Validates exactly 11 ASCII digits or the canonical `###.###.###-##` format.
  * Other strings return `INVALID_FORMAT`; well-shaped values are checked for
  * repeated digits and checksum errors.
+ * This does not prove issuance or check Receita Federal cadastral status.
  *
  * @param value - CPF value to validate.
  * @returns `{ success: true, error: null }` if valid; `{ success: false, error: CpfError }` if invalid.
- * @throws {TypeError} If the provided value is not a string.
+ * Non-string values return `INVALID_TYPE`. Unexpected internal exceptions are rethrown.
  *
  * @example
  * ```TypeScript
@@ -200,11 +201,12 @@ export function generate(options: CpfGenerateOptions = {}): string {
  * validate("688#639!!!!!!446...21"); // { success: false, error: CpfError (INVALID_FORMAT) }
  * ```
  */
-export function validate(value: string): CpfValidateResult {
+export function validate(value: unknown): CpfValidationResult {
   if (typeof value !== "string") {
-    throw new TypeError(
-      `Expected a string for CPF validate, but received ${value === null ? "null" : typeof value}`,
-    );
+    return {
+      success: false,
+      error: new CpfError("INVALID_TYPE", "Expected a string for CPF validation."),
+    };
   }
 
   try {
@@ -216,9 +218,6 @@ export function validate(value: string): CpfValidateResult {
       return { success: false, error };
     }
 
-    return {
-      success: false,
-      error: new CpfError("UNKNOWN_ERROR", "Unexpected CPF validation error."),
-    };
+    throw error;
   }
 }

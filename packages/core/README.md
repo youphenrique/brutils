@@ -8,7 +8,7 @@ Node.js 24.13.1 or newer within the Node.js 24 release line is supported. Other 
 
 ## CPF input contract
 
-`cpf.normalize`, `cpf.format`, and `cpf.validate` serve different purposes. For string inputs, none throws because of malformed content. All three expect a string at runtime and throw `TypeError` for other types. `cpf.validate` returns a result object for strings; it is the only one of these functions that decides CPF validity.
+`cpf.normalize`, `cpf.format`, and `cpf.validate` serve different purposes. For string inputs, none throws because of malformed content. `normalize` and `format` expect a string at runtime and throw `TypeError` for other types. `cpf.validate` accepts `unknown` and returns a result for expected invalid input; it is the only one of these functions that decides structural CPF validity.
 
 | Input string                                                  | `normalize`                      | `format`                                       | `validate`                          |
 | ------------------------------------------------------------- | -------------------------------- | ---------------------------------------------- | ----------------------------------- |
@@ -53,5 +53,25 @@ Generation uses `Math.random`, which is not cryptographically secure. Generated 
 - `format` changes only exactly 11 ASCII digits and returns every other string unchanged. It has no padding option, because formatting must not invent identifier digits.
 - `validate` accepts only 11 ASCII digits or exact `###.###.###-##`. Whitespace, other punctuation, and non-ASCII numerals are rejected.
 - `INVALID_FORMAT` covers both length and syntax failures. No `INVALID_LENGTH` code is added unless callers need to tell them apart.
-- Whether `validate` keeps throwing `TypeError` for non-string input or returns an `INVALID_TYPE` failure is deferred to [#63](https://github.com/youphenrique/brutils/issues/63).
+- CPF, CNPJ, and CEP validators accept `unknown` and return `INVALID_TYPE` for non-string values. Unexpected internal exceptions are rethrown unchanged.
 - CNPJ and CEP adopt a coherent contract in [#65](https://github.com/youphenrique/brutils/issues/65) and [#66](https://github.com/youphenrique/brutils/issues/66).
+
+## Validation results
+
+`cpf.validate(value: unknown)`, `cnpj.validate(value: unknown)`, and `cep.validate(value: unknown)` share a discriminated result contract: `{ success: true, error: null }` or `{ success: false, error }`. Non-string values return `INVALID_TYPE` without coercion, including `null`, `undefined`, numbers, and boxed strings. Invalid strings return `INVALID_FORMAT`, `REPEATED_DIGITS`, or (CPF/CNPJ only) `INVALID_CHECKSUM`. Unexpected internal exceptions are rethrown unchanged, so implementation defects remain observable.
+
+The public result types are `cpf.CpfValidationResult`, `cnpj.CnpjValidationResult`, and `cep.CepValidationResult`. On failure, `error` is a public `Error` instance: `cpf.CpfError`, `cnpj.CnpjError`, or `cep.CepValidationError`. Its class, `name`, and readonly typed `code` are stable; `message` is descriptive text and should not be used for branching.
+
+```ts
+const value: unknown = "522.639.446-21";
+const result: cpf.CpfValidationResult = cpf.validate(value);
+if (result.success) {
+  // result.error is null
+} else {
+  console.log(result.error.code); // CpfErrorCode
+}
+```
+
+Migration: replace `CpfValidateResult` and `CnpjValidateResult` imports with `CpfValidationResult` and `CnpjValidationResult`. Handle non-string input through the `INVALID_TYPE` result instead of catching `TypeError`. `UNKNOWN_ERROR` is removed from validation error codes; unexpected exceptions propagate to the caller.
+
+CPF and CNPJ checksum validation checks structural consistency only. It neither proves issuance nor checks Receita Federal cadastral status. CEP validation checks syntax and repeated digits, has no checksum, and does not confirm postal assignment.

@@ -165,13 +165,6 @@ describe("cnpj.validate", () => {
     expect(result.error).toBeInstanceOf(CnpjError);
     expect(result.error?.code).toBe("INVALID_FORMAT");
   });
-
-  it("throws TypeError for non-string input", () => {
-    expect(() => cnpj.validate(null as unknown as string)).toThrow(TypeError);
-    expect(() => cnpj.validate(undefined as unknown as string)).toThrow(TypeError);
-    expect(() => cnpj.validate(73450392000164 as unknown as string)).toThrow(TypeError);
-    expect(() => cnpj.validate({} as unknown as string)).toThrow(TypeError);
-  });
 });
 
 describe("CnpjError", () => {

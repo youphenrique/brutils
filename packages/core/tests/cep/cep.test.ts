@@ -56,13 +56,6 @@ describe("cep.validate", () => {
     expect(cep.validate("55555555").success).toBe(false);
     expect(cep.validate("99999999").success).toBe(false);
   });
-
-  it("throws for edge-case input types", () => {
-    expect(() => cep.validate(null as any)).toThrow(TypeError);
-    expect(() => cep.validate(undefined as any)).toThrow(TypeError);
-    expect(() => cep.validate(12345678 as any)).toThrow(TypeError);
-    expect(() => cep.validate({} as any)).toThrow(TypeError);
-  });
 });
 
 describe("cep.getAddress", () => {
