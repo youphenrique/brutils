@@ -1,5 +1,6 @@
 import { assertOptions } from "../../common/assert.ts";
 import { formatProgressive } from "../../common/format.ts";
+import { runValidation } from "../../common/validate.ts";
 import {
   CEP_LENGTH,
   CEP_RAW_PATTERN,
@@ -53,24 +54,7 @@ export function normalize(value: string): string {
  * ```
  */
 export function validate(value: unknown): CepValidationResult {
-  if (typeof value !== "string") {
-    return {
-      success: false,
-      error: new CepValidationError("INVALID_TYPE", "Expected a string for CEP validation."),
-    };
-  }
-
-  try {
-    assertValid(value);
-
-    return { success: true, error: null };
-  } catch (error) {
-    if (error instanceof CepValidationError) {
-      return { success: false, error };
-    }
-
-    throw error;
-  }
+  return runValidation(value, "CEP", CepValidationError, assertValid);
 }
 
 /**
@@ -146,8 +130,7 @@ export function formatAsYouType(value: string): string {
  * @param value - The CEP string to resolve.
  * @param options - Optional configuration for provider resolution, caching, timeout, and strategy.
  * @returns A promise that resolves to the address details.
- * @throws {TypeError} If the provided value is not a string.
- * @throws {CepValidationError} If the CEP is invalid.
+ * @throws {CepValidationError} If the value is not a string (`INVALID_TYPE`) or the CEP is invalid.
  * @throws {CepNotFoundError} If the CEP is not found by the providers.
  * @throws {CepProviderError} If all providers fail to respond.
  *

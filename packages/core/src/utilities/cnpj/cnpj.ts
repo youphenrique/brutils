@@ -1,5 +1,6 @@
 import { assertOptions } from "../../common/assert.ts";
 import { formatProgressive } from "../../common/format.ts";
+import { runValidation } from "../../common/validate.ts";
 import { ALPHANUMERIC_CHARS, DIGIT_CHARS, CNPJ_LENGTH, CNPJ_RAW_PATTERN } from "./constants";
 import { assertValid, calcCheckDigits, CnpjError } from "./utils";
 import type { CnpjFormatOptions, CnpjGenerateOptions, CnpjValidationResult } from "./types";
@@ -163,22 +164,5 @@ export function generate(options: CnpjGenerateOptions = {}): string {
  * ```
  */
 export function validate(value: unknown): CnpjValidationResult {
-  if (typeof value !== "string") {
-    return {
-      success: false,
-      error: new CnpjError("INVALID_TYPE", "Expected a string for CNPJ validation."),
-    };
-  }
-
-  try {
-    assertValid(value);
-
-    return { success: true, error: null };
-  } catch (error) {
-    if (error instanceof CnpjError) {
-      return { success: false, error };
-    }
-
-    throw error;
-  }
+  return runValidation(value, "CNPJ", CnpjError, assertValid);
 }

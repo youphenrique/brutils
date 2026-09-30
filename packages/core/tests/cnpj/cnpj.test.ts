@@ -1,7 +1,8 @@
-import { describe, expect, it } from "vite-plus/test";
+import { afterEach, describe, expect, expectTypeOf, it, vi } from "vite-plus/test";
 
 import { cnpj } from "../../src/index.ts";
 import { CnpjError } from "../../src/utilities/cnpj";
+import * as cnpjUtils from "../../src/utilities/cnpj/utils.ts";
 
 describe("cnpj.normalize", () => {
   it("strips punctuation from a formatted numeric CNPJ", () => {
@@ -164,6 +165,94 @@ describe("cnpj.validate", () => {
     expect(result.success).toBe(false);
     expect(result.error).toBeInstanceOf(CnpjError);
     expect(result.error?.code).toBe("INVALID_FORMAT");
+  });
+});
+
+describe("cnpj.validate contract", () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it.each(
+    [
+      null,
+      undefined,
+      123,
+      NaN,
+      true,
+      123n,
+      Symbol("identifier"),
+      {},
+      [],
+      new String("73450392000164"),
+      () => "73450392000164",
+      {
+        toString() {
+          throw new Error("Must not coerce input");
+        },
+      },
+    ].map((value) => ({ value })),
+  )("returns INVALID_TYPE for non-string input %#", ({ value }) => {
+    const result = cnpj.validate(value);
+    expect(result.success).toBe(false);
+    expect(result.error).toBeInstanceOf(CnpjError);
+    expect(result.error?.code).toBe("INVALID_TYPE");
+  });
+
+  it("describes the received type in the INVALID_TYPE message", () => {
+    expect(cnpj.validate(null).error?.message).toBe(
+      "Expected a string for CNPJ validation, but received null.",
+    );
+    expect(cnpj.validate([]).error?.message).toMatch(/received array\.$/);
+    expect(cnpj.validate(123).error?.message).toMatch(/received number\.$/);
+  });
+
+  it.each([
+    "",
+    "123",
+    "abc",
+    " 73450392000164 ",
+    "73450392000164\n",
+    "９3450392000164",
+    "734503920001640",
+  ])("returns INVALID_FORMAT for malformed string %#", (value) => {
+    expect(cnpj.validate(value).error?.code).toBe("INVALID_FORMAT");
+  });
+
+  it("returns the original expected validation error", () => {
+    const error = new CnpjError("INVALID_FORMAT");
+    vi.spyOn(cnpjUtils, "assertValid").mockImplementation(() => {
+      throw error;
+    });
+    expect(cnpj.validate("73450392000164").error).toBe(error);
+  });
+
+  it.each([
+    new Error("Internal defect"),
+    new TypeError("Internal type error"),
+    { defect: true },
+    "defect",
+    null,
+    undefined,
+  ])("rethrows unexpected exceptions unchanged %#", (error) => {
+    vi.spyOn(cnpjUtils, "assertValid").mockImplementation(() => {
+      throw error;
+    });
+    const caught = vi.fn();
+    try {
+      cnpj.validate("73450392000164");
+    } catch (thrown) {
+      caught(thrown);
+    }
+    expect(caught).toHaveBeenCalledExactlyOnceWith(error);
+  });
+
+  it("narrows the public result type on success", () => {
+    const result: cnpj.CnpjValidationResult = cnpj.validate("73450392000164");
+    if (result.success) {
+      expectTypeOf(result.error).toEqualTypeOf<null>();
+    } else {
+      expectTypeOf(result.error).toEqualTypeOf<cnpj.CnpjError>();
+      expectTypeOf(result.error.code).toEqualTypeOf<cnpj.CnpjErrorCode>();
+    }
   });
 });
 

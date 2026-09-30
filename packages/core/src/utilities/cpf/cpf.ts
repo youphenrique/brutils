@@ -1,5 +1,6 @@
 import { assertOptions } from "../../common/assert.ts";
 import { formatProgressive } from "../../common/format.ts";
+import { runValidation } from "../../common/validate.ts";
 import { CPF_FORMATTED_PATTERN, CPF_LENGTH, CPF_RAW_PATTERN } from "./constants";
 import { CpfError, randomDigit, computeCheckDigit, assertValid, assertMaskOptions } from "./utils";
 import type { CpfGenerateOptions, CpfMaskOptions, CpfValidationResult } from "./types";
@@ -202,22 +203,5 @@ export function generate(options: CpfGenerateOptions = {}): string {
  * ```
  */
 export function validate(value: unknown): CpfValidationResult {
-  if (typeof value !== "string") {
-    return {
-      success: false,
-      error: new CpfError("INVALID_TYPE", "Expected a string for CPF validation."),
-    };
-  }
-
-  try {
-    assertValid(value);
-
-    return { success: true, error: null };
-  } catch (error) {
-    if (error instanceof CpfError) {
-      return { success: false, error };
-    }
-
-    throw error;
-  }
+  return runValidation(value, "CPF", CpfError, assertValid);
 }

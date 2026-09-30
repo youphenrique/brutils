@@ -1,7 +1,8 @@
-import { afterEach, describe, expect, it, vi } from "vite-plus/test";
+import { afterEach, describe, expect, expectTypeOf, it, vi } from "vite-plus/test";
 
 import { cep } from "../../src/index.ts";
 import { CepNotFoundError, CepProviderError, CepValidationError } from "../../src/utilities/cep";
+import * as cepUtils from "../../src/utilities/cep/utils.ts";
 
 const originalFetch = globalThis.fetch;
 
@@ -58,6 +59,87 @@ describe("cep.validate", () => {
   });
 });
 
+describe("cep.validate contract", () => {
+  it.each(
+    [
+      null,
+      undefined,
+      123,
+      NaN,
+      true,
+      123n,
+      Symbol("identifier"),
+      {},
+      [],
+      new String("01001000"),
+      () => "01001000",
+      {
+        toString() {
+          throw new Error("Must not coerce input");
+        },
+      },
+    ].map((value) => ({ value })),
+  )("returns INVALID_TYPE for non-string input %#", ({ value }) => {
+    const result = cep.validate(value);
+    expect(result.success).toBe(false);
+    expect(result.error).toBeInstanceOf(CepValidationError);
+    expect(result.error?.code).toBe("INVALID_TYPE");
+  });
+
+  it("describes the received type in the INVALID_TYPE message", () => {
+    expect(cep.validate(null).error?.message).toBe(
+      "Expected a string for CEP validation, but received null.",
+    );
+    expect(cep.validate([]).error?.message).toMatch(/received array\.$/);
+    expect(cep.validate(123).error?.message).toMatch(/received number\.$/);
+  });
+
+  it.each(["", "123", "abc", " 01001000 ", "01001000\n", "９1001000", "010010000"])(
+    "returns INVALID_FORMAT for malformed string %#",
+    (value) => {
+      expect(cep.validate(value).error?.code).toBe("INVALID_FORMAT");
+    },
+  );
+
+  it("returns the original expected validation error", () => {
+    const error = new CepValidationError("INVALID_FORMAT");
+    vi.spyOn(cepUtils, "assertValid").mockImplementation(() => {
+      throw error;
+    });
+    expect(cep.validate("01001000").error).toBe(error);
+  });
+
+  it.each([
+    new Error("Internal defect"),
+    new TypeError("Internal type error"),
+    { defect: true },
+    "defect",
+    null,
+    undefined,
+  ])("rethrows unexpected exceptions unchanged %#", (error) => {
+    vi.spyOn(cepUtils, "assertValid").mockImplementation(() => {
+      throw error;
+    });
+    const caught = vi.fn();
+    try {
+      cep.validate("01001000");
+    } catch (thrown) {
+      caught(thrown);
+    }
+    expect(caught).toHaveBeenCalledExactlyOnceWith(error);
+  });
+
+  it("narrows the public result type on success", () => {
+    const result: cep.CepValidationResult = cep.validate("01001000");
+    if (result.success) {
+      expectTypeOf(result.error).toEqualTypeOf<null>();
+    } else {
+      expectTypeOf(result.error).toEqualTypeOf<cep.CepValidationError>();
+      expectTypeOf(result.error.code).toEqualTypeOf<cep.CepErrorCode>();
+    }
+  });
+});
+
 describe("cep.getAddress", () => {
   it("throws validation error before provider call", async () => {
     const fetchSpy = vi.fn();
@@ -65,6 +147,19 @@ describe("cep.getAddress", () => {
     globalThis.fetch = fetchSpy as unknown as typeof fetch;
 
     await expect(cep.getAddress("123")).rejects.toBeInstanceOf(cep.CepValidationError);
+
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it("rejects non-string input with INVALID_TYPE before provider call", async () => {
+    const fetchSpy = vi.fn();
+
+    globalThis.fetch = fetchSpy as unknown as typeof fetch;
+
+    await expect(cep.getAddress(null as unknown as string)).rejects.toMatchObject({
+      name: "CepValidationError",
+      code: "INVALID_TYPE",
+    });
 
     expect(fetchSpy).not.toHaveBeenCalled();
   });

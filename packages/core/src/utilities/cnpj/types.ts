@@ -18,3 +18,6 @@ export type CnpjGenerateOptions = {
 export type CnpjValidationResult =
   | { success: true; error: null }
   | { success: false; error: CnpjError };
+
+/** @deprecated Use {@link CnpjValidationResult}. */
+export type CnpjValidateResult = CnpjValidationResult;

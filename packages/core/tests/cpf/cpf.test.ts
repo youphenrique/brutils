@@ -2,6 +2,7 @@ import { afterEach, describe, expect, expectTypeOf, it, vi } from "vite-plus/tes
 
 import { cpf } from "../../src/index.ts";
 import { CpfError } from "../../src/utilities/cpf";
+import * as cpfUtils from "../../src/utilities/cpf/utils.ts";
 
 describe("cpf.normalize", () => {
   it("strips non-digit characters from a partial, overlong, or well-formed CPF", () => {
@@ -263,6 +264,89 @@ describe("cpf.validate", () => {
     expect(cpf.validate("32678128016")).toEqual({ success: true, error: null });
     expect(cpf.validate("422.091.120-01")).toEqual({ success: true, error: null });
     expect(cpf.validate("00000000191")).toEqual({ success: true, error: null });
+  });
+});
+
+describe("cpf.validate contract", () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it.each(
+    [
+      null,
+      undefined,
+      123,
+      NaN,
+      true,
+      123n,
+      Symbol("identifier"),
+      {},
+      [],
+      new String("52263944621"),
+      () => "52263944621",
+      {
+        toString() {
+          throw new Error("Must not coerce input");
+        },
+      },
+    ].map((value) => ({ value })),
+  )("returns INVALID_TYPE for non-string input %#", ({ value }) => {
+    const result = cpf.validate(value);
+    expect(result.success).toBe(false);
+    expect(result.error).toBeInstanceOf(CpfError);
+    expect(result.error?.code).toBe("INVALID_TYPE");
+  });
+
+  it("describes the received type in the INVALID_TYPE message", () => {
+    expect(cpf.validate(null).error?.message).toBe(
+      "Expected a string for CPF validation, but received null.",
+    );
+    expect(cpf.validate([]).error?.message).toMatch(/received array\.$/);
+    expect(cpf.validate(123).error?.message).toMatch(/received number\.$/);
+  });
+
+  it.each(["", "123", "abc", " 52263944621 ", "52263944621\n", "９2263944621", "522639446210"])(
+    "returns INVALID_FORMAT for malformed string %#",
+    (value) => {
+      expect(cpf.validate(value).error?.code).toBe("INVALID_FORMAT");
+    },
+  );
+
+  it("returns the original expected validation error", () => {
+    const error = new CpfError("INVALID_FORMAT");
+    vi.spyOn(cpfUtils, "assertValid").mockImplementation(() => {
+      throw error;
+    });
+    expect(cpf.validate("52263944621").error).toBe(error);
+  });
+
+  it.each([
+    new Error("Internal defect"),
+    new TypeError("Internal type error"),
+    { defect: true },
+    "defect",
+    null,
+    undefined,
+  ])("rethrows unexpected exceptions unchanged %#", (error) => {
+    vi.spyOn(cpfUtils, "assertValid").mockImplementation(() => {
+      throw error;
+    });
+    const caught = vi.fn();
+    try {
+      cpf.validate("52263944621");
+    } catch (thrown) {
+      caught(thrown);
+    }
+    expect(caught).toHaveBeenCalledExactlyOnceWith(error);
+  });
+
+  it("narrows the public result type on success", () => {
+    const result: cpf.CpfValidationResult = cpf.validate("52263944621");
+    if (result.success) {
+      expectTypeOf(result.error).toEqualTypeOf<null>();
+    } else {
+      expectTypeOf(result.error).toEqualTypeOf<cpf.CpfError>();
+      expectTypeOf(result.error.code).toEqualTypeOf<cpf.CpfErrorCode>();
+    }
   });
 });
 

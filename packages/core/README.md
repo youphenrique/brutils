@@ -72,6 +72,6 @@ if (result.success) {
 }
 ```
 
-Migration: replace `CpfValidateResult` and `CnpjValidateResult` imports with `CpfValidationResult` and `CnpjValidationResult`. Handle non-string input through the `INVALID_TYPE` result instead of catching `TypeError`. `UNKNOWN_ERROR` is removed from validation error codes; unexpected exceptions propagate to the caller.
+Migration: `CpfValidateResult` and `CnpjValidateResult` remain as deprecated aliases; replace them with `CpfValidationResult` and `CnpjValidationResult`. Handle non-string input through the `INVALID_TYPE` result instead of catching `TypeError`. `cep.getAddress` validates through `cep.validate`, so non-string input now rejects with `CepValidationError` (`INVALID_TYPE`) instead of `TypeError`. `UNKNOWN_ERROR` is removed from validation error codes; unexpected exceptions propagate to the caller.
 
 CPF and CNPJ checksum validation checks structural consistency only. It neither proves issuance nor checks Receita Federal cadastral status. CEP validation checks syntax and repeated digits, has no checksum, and does not confirm postal assignment.
