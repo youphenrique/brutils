@@ -330,22 +330,29 @@ describe("cpf.validate", () => {
     vi.spyOn(cpfUtils, "assertValid").mockImplementation(() => {
       throw error;
     });
+
     const caught = vi.fn();
+
     try {
       cpf.validate("52263944621");
     } catch (thrown) {
       caught(thrown);
     }
+
     expect(caught).toHaveBeenCalledExactlyOnceWith(error);
   });
 
-  it("narrows the public result type on success", () => {
-    const result: cpf.CpfValidationResult = cpf.validate("52263944621");
-    if (result.success) {
-      expectTypeOf(result.error).toEqualTypeOf<null>();
-    } else {
-      expectTypeOf(result.error).toEqualTypeOf<cpf.CpfError>();
-      expectTypeOf(result.error.code).toEqualTypeOf<cpf.CpfErrorCode>();
+  it("narrows the public result type in both branches", () => {
+    const successResult: cpf.CpfValidationResult = cpf.validate("52263944621");
+    const failureResult: cpf.CpfValidationResult = cpf.validate("123");
+
+    if (successResult.success) {
+      expectTypeOf(successResult.error).toEqualTypeOf<null>();
+    }
+
+    if (!failureResult.success) {
+      expectTypeOf(failureResult.error).toEqualTypeOf<cpf.CpfError>();
+      expectTypeOf(failureResult.error.code).toEqualTypeOf<cpf.CpfErrorCode>();
     }
   });
 });

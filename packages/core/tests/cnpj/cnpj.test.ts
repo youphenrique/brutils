@@ -236,22 +236,29 @@ describe("cnpj.validate", () => {
     vi.spyOn(cnpjUtils, "assertValid").mockImplementation(() => {
       throw error;
     });
+
     const caught = vi.fn();
+
     try {
       cnpj.validate("73450392000164");
     } catch (thrown) {
       caught(thrown);
     }
+
     expect(caught).toHaveBeenCalledExactlyOnceWith(error);
   });
 
-  it("narrows the public result type on success", () => {
-    const result: cnpj.CnpjValidationResult = cnpj.validate("73450392000164");
-    if (result.success) {
-      expectTypeOf(result.error).toEqualTypeOf<null>();
-    } else {
-      expectTypeOf(result.error).toEqualTypeOf<cnpj.CnpjError>();
-      expectTypeOf(result.error.code).toEqualTypeOf<cnpj.CnpjErrorCode>();
+  it("narrows the public result type in both branches", () => {
+    const successResult: cnpj.CnpjValidationResult = cnpj.validate("73450392000164");
+    const failureResult: cnpj.CnpjValidationResult = cnpj.validate("123");
+
+    if (successResult.success) {
+      expectTypeOf(successResult.error).toEqualTypeOf<null>();
+    }
+
+    if (!failureResult.success) {
+      expectTypeOf(failureResult.error).toEqualTypeOf<cnpj.CnpjError>();
+      expectTypeOf(failureResult.error.code).toEqualTypeOf<cnpj.CnpjErrorCode>();
     }
   });
 });

@@ -120,22 +120,29 @@ describe("cep.validate", () => {
     vi.spyOn(cepUtils, "assertValid").mockImplementation(() => {
       throw error;
     });
+
     const caught = vi.fn();
+
     try {
       cep.validate("01001000");
     } catch (thrown) {
       caught(thrown);
     }
+
     expect(caught).toHaveBeenCalledExactlyOnceWith(error);
   });
 
-  it("narrows the public result type on success", () => {
-    const result: cep.CepValidationResult = cep.validate("01001000");
-    if (result.success) {
-      expectTypeOf(result.error).toEqualTypeOf<null>();
-    } else {
-      expectTypeOf(result.error).toEqualTypeOf<cep.CepValidationError>();
-      expectTypeOf(result.error.code).toEqualTypeOf<cep.CepErrorCode>();
+  it("narrows the public result type in both branches", () => {
+    const successResult: cep.CepValidationResult = cep.validate("01001000");
+    const failureResult: cep.CepValidationResult = cep.validate("123");
+
+    if (successResult.success) {
+      expectTypeOf(successResult.error).toEqualTypeOf<null>();
+    }
+
+    if (!failureResult.success) {
+      expectTypeOf(failureResult.error).toEqualTypeOf<cep.CepValidationError>();
+      expectTypeOf(failureResult.error.code).toEqualTypeOf<cep.CepErrorCode>();
     }
   });
 });
