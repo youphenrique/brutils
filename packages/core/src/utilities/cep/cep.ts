@@ -1,19 +1,9 @@
 import { assertOptions } from "../../common/assert.ts";
 import { formatProgressive } from "../../common/format.ts";
 import { runValidation } from "../../common/validate.ts";
-import {
-  CEP_LENGTH,
-  CEP_RAW_PATTERN,
-  DEFAULT_PROVIDER_ORDER,
-  DEFAULT_TIMEOUT_MS,
-} from "./constants";
-import type {
-  AddressResponse,
-  CepFormatOptions,
-  CepValidationResult,
-  GetAddressOptions,
-} from "./types";
-import { assertValid, CepValidationError, resolveCacheConfig, runFallback, runRace } from "./utils";
+import { CEP_LENGTH, CEP_RAW_PATTERN } from "./constants";
+import type { CepFormatOptions, CepValidationResult } from "./types";
+import { assertValid, CepValidationError } from "./utils";
 
 /**
  * Normalizes a CEP string by stripping all non-digit characters.
@@ -122,57 +112,4 @@ export function formatAsYouType(value: string): string {
   const normalized = normalize(value).slice(0, CEP_LENGTH);
 
   return formatProgressive(normalized, [5, 3], ["-"]);
-}
-
-/**
- * Resolves a Brazilian CEP into a normalized address DTO using one or multiple providers.
- *
- * @param value - The CEP string to resolve.
- * @param options - Optional configuration for provider resolution, caching, timeout, and strategy.
- * @returns A promise that resolves to the address details.
- * @throws {CepValidationError} If the value is not a string (`INVALID_TYPE`) or the CEP is invalid.
- * @throws {CepNotFoundError} If the CEP is not found by the providers.
- * @throws {CepProviderError} If all providers fail to respond.
- *
- * @example
- * ```TypeScript
- * await getAddress("01001-000"); // { cep: "01001000", state: "SP", city: "São Paulo", ... }
- * await getAddress("01001-000", { strategy: "race", timeout: 2000 });
- * ```
- */
-export async function getAddress(
-  value: string,
-  options: GetAddressOptions = {},
-): Promise<AddressResponse> {
-  const validation = validate(value);
-
-  if (!validation.success) {
-    throw validation.error;
-  }
-
-  const normalized = normalize(value);
-
-  const providers = options.providers ?? DEFAULT_PROVIDER_ORDER;
-  const timeout = options.timeout ?? DEFAULT_TIMEOUT_MS;
-  const strategy = options.strategy ?? "fallback";
-
-  const cacheConfig = resolveCacheConfig(options.cache);
-
-  if (cacheConfig.enabled) {
-    const cached = await cacheConfig.store.get(normalized);
-    if (cached) {
-      return cached;
-    }
-  }
-
-  const response =
-    strategy === "race"
-      ? await runRace(normalized, providers, timeout)
-      : await runFallback(normalized, providers, timeout);
-
-  if (cacheConfig.enabled) {
-    await cacheConfig.store.set(normalized, response, cacheConfig.ttl);
-  }
-
-  return response;
 }

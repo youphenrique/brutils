@@ -1,4 +1,4 @@
-import { getByCode } from "../../ufs";
+import { cep, ufs } from "@brutils/core";
 import type { CepProvider } from "./types";
 import {
   CepProviderNotFoundSignal,
@@ -6,7 +6,6 @@ import {
   throttleProvider,
   unfetch,
 } from "../utils";
-import { format } from "../cep";
 
 type ApicepResponse = {
   code?: string;
@@ -20,13 +19,13 @@ type ApicepResponse = {
 
 export const apicepProvider: CepProvider = {
   name: "apicep",
-  async fetch(cep, timeout) {
+  async fetch(value, timeout) {
     await throttleProvider("apicep");
 
     let response: Response;
 
     try {
-      const formattedCep = format(cep);
+      const formattedCep = cep.format(value);
       response = await unfetch(`https://cdn.apicep.com/file/apicep/${formattedCep}.json`, timeout);
     } catch (error) {
       throw new CepProviderRequestError(
@@ -55,7 +54,7 @@ export const apicepProvider: CepProvider = {
       neighborhood: data.district ?? "",
       city: data.city ?? "",
       uf: data.state ?? "",
-      state: getByCode(data.state ?? "")?.name ?? "",
+      state: ufs.getByCode(data.state ?? "")?.name ?? "",
       provider: "apicep",
     };
   },

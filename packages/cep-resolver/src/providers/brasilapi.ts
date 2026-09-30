@@ -5,7 +5,7 @@ import {
   unfetch,
 } from "../utils";
 import type { CepProvider } from "./types";
-import { getByCode } from "../../ufs";
+import { ufs } from "@brutils/core";
 
 type BrasilApiResponse = {
   cep?: string;
@@ -53,7 +53,7 @@ export const brasilapiProvider: CepProvider = {
       neighborhood: data.neighborhood ?? "",
       city: data.city ?? "",
       uf: data.state ?? "",
-      state: getByCode(data.state ?? "")?.name ?? "",
+      state: ufs.getByCode(data.state ?? "")?.name ?? "",
       provider: "brasilapi",
       ibgeCode: data.ibge,
       ddd: data.ddd,
