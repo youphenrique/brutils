@@ -1,8 +1,7 @@
 {
-  "name": "@brutils/core",
+  "name": "@brutils/cep-resolver",
   "version": "0.1.0",
-  "description": "TypeScript library for brazilian business utilities",
-  "homepage": "https://github.com/author/library#readme",
+  "description": "Resolve Brazilian CEPs into addresses using third-party providers",
   "bugs": {
     "url": "https://github.com/youphenrique/brutils/issues"
   },
@@ -10,7 +9,8 @@
   "author": "Paulo Henrique <pauloh1288@gmail.com>",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/youphenrique/brutils.git"
+    "url": "git+https://github.com/youphenrique/brutils.git",
+    "directory": "packages/cep-resolver"
   },
   "files": [
     "dist"
@@ -18,14 +18,8 @@
   "type": "module",
   "types": "./dist/index.d.mts",
   "exports": {
-    ".": "./src/index.ts",
+    ".": "./dist/index.mjs",
     "./package.json": "./package.json"
-  },
-  "publishConfig": {
-    "exports": {
-      ".": "./dist/index.mjs",
-      "./package.json": "./package.json"
-    }
   },
   "scripts": {
     "build": "vp pack",
@@ -34,10 +28,12 @@
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "pnpm run build"
   },
+  "dependencies": {
+    "@brutils/core": "workspace:^"
+  },
   "devDependencies": {
     "@arethetypeswrong/core": "catalog:",
     "@types/node": "catalog:",
-    "bumpp": "^12.3.0",
     "publint": "catalog:",
     "typescript": "catalog:",
     "vite-plus": "catalog:"

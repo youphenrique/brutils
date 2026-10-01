@@ -72,6 +72,20 @@ if (result.success) {
 }
 ```
 
-Migration: `CpfValidateResult` and `CnpjValidateResult` remain as deprecated aliases; replace them with `CpfValidationResult` and `CnpjValidationResult`. Handle non-string input through the `INVALID_TYPE` result instead of catching `TypeError`. `cep.getAddress` validates through `cep.validate`, so non-string input now rejects with `CepValidationError` (`INVALID_TYPE`) instead of `TypeError`. `UNKNOWN_ERROR` is removed from validation error codes; unexpected exceptions propagate to the caller.
+Migration: `CpfValidateResult` and `CnpjValidateResult` remain as deprecated aliases; replace them with `CpfValidationResult` and `CnpjValidationResult`. Handle non-string input through the `INVALID_TYPE` result instead of catching `TypeError`. `UNKNOWN_ERROR` is removed from validation error codes; unexpected exceptions propagate to the caller.
 
 CPF and CNPJ checksum validation checks structural consistency only. It neither proves issuance nor checks Receita Federal cadastral status. CEP validation checks syntax and repeated digits, has no checksum, and does not confirm postal assignment.
+
+## CEP address lookup
+
+`@brutils/core` performs no I/O. `cep.getAddress`, `cep.clearCache`, `cep.resetThrottler`, `cep.PROVIDERS`, `cep.CepNotFoundError`, and `cep.CepProviderError` moved to [`@brutils/cep-resolver`](../cep-resolver), which is versioned separately because it depends on third-party provider APIs:
+
+```ts
+// Before
+import { cep } from "@brutils/core";
+await cep.getAddress("01001-000");
+
+// After
+import { getAddress } from "@brutils/cep-resolver";
+await getAddress("01001-000");
+```

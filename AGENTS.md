@@ -26,6 +26,8 @@ validation, formatting, and generation. The core of the project is the `@brutils
 - `packages/core/`: The main library containing utility functions.
   - `src/`: Core logic (shared helpers, utility modules).
   - `tests/`: Vitest test suites.
+- `packages/cep-resolver/`: CEP → address lookup via third-party providers (network I/O). Kept out of core so
+  provider changes never affect core's semver contract.
 - `apps/docs/`: Planned documentation website.
 
 ---
