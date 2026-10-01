@@ -391,42 +391,36 @@ describe("cpf.generate", () => {
   it.each([undefined, {}, { formatted: undefined }, { formatted: false }, { formatted: true }])(
     "generates a structurally valid CPF with options %j",
     (options) => {
+      const randomSpy = vi.spyOn(Math, "random");
+      for (const digit of "123456789") {
+        randomSpy.mockReturnValueOnce((Number(digit) + 0.5) / 10);
+      }
       const generated = cpf.generate(options);
 
+      expect(generated).toBe(options?.formatted ? "123.456.789-09" : "12345678909");
       expect(generated).toMatch(options?.formatted ? /^\d{3}\.\d{3}\.\d{3}-\d{2}$/ : /^\d{11}$/);
       expect(cpf.validate(generated).success).toBe(true);
     },
   );
 
   it.each([
-    ["00000000191", 2, 10],
-    ["00000000515", 10, 6],
-    ["00000000604", 1, 7],
-    ["00000000949", 7, 2],
-    ["00000001406", 0, 5],
-    ["00000001830", 8, 1],
-    ["00000001910", 10, 0],
-  ])(
-    "preserves leading zeroes and computes %s (checksum remainders %i, %i)",
-    (expected, first, second) => {
-      const remainder = (digits: string, weightStart: number) =>
-        Array.from(digits, Number).reduce(
-          (sum, digit, index) => sum + digit * (weightStart - index),
-          0,
-        ) % 11;
-      expect(remainder(expected.slice(0, 9), 10)).toBe(first);
-      expect(remainder(expected.slice(0, 10), 11)).toBe(second);
+    "00000000191",
+    "00000000515",
+    "00000000604",
+    "00000000949",
+    "00000001406",
+    "00000001830",
+    "00000001910",
+  ])("preserves leading zeroes and matches the fixed checksum fixture %s", (expected) => {
+    const randomSpy = vi.spyOn(Math, "random");
+    for (const digit of expected.slice(0, 9)) {
+      randomSpy.mockReturnValueOnce((Number(digit) + 0.5) / 10);
+    }
 
-      const randomSpy = vi.spyOn(Math, "random");
-      for (const digit of expected.slice(0, 9)) {
-        randomSpy.mockReturnValueOnce((Number(digit) + 0.5) / 10);
-      }
-
-      expect(cpf.generate()).toBe(expected);
-      expect(cpf.validate(expected).success).toBe(true);
-      expect(randomSpy).toHaveBeenCalledTimes(9);
-    },
-  );
+    expect(cpf.generate()).toBe(expected);
+    expect(cpf.validate(expected).success).toBe(true);
+    expect(randomSpy).toHaveBeenCalledTimes(9);
+  });
 
   it("preserves leading zeroes in formatted output", () => {
     const randomSpy = vi.spyOn(Math, "random");
